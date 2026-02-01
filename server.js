@@ -39,41 +39,67 @@ const { initializeBots } = require('./config/telegram');
 initializeBots();
 
 // Security Middleware
-// 1. Helmet - Security headers
+// 1. Helmet - Security headers with improved CSP
+const crypto = require('crypto');
+
+// Generate nonce for inline scripts/styles
+app.use((req, res, next) => {
+    res.locals.nonce = crypto.randomBytes(16).toString('base64');
+    next();
+});
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            styleSrc: [
+                "'self'",
+                "https://fonts.googleapis.com",
+                (req, res) => `'nonce-${res.locals.nonce}'`  // Allow nonce-based inline styles
+            ],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", "data:", "https:"]
+            scriptSrc: [
+                "'self'",
+                (req, res) => `'nonce-${res.locals.nonce}'`  // Allow nonce-based inline scripts
+            ],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'"],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: []
         }
     },
     hsts: {
         maxAge: 31536000,
         includeSubDomains: true,
         preload: true
-    }
+    },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    noSniff: true,
+    xssFilter: true
 }));
 
 // 2. CORS - Restrict origins
 const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+    ? (process.env.ALLOWED_ORIGINS || 'https://nc-earnings-campaign-production.up.railway.app').split(',').map(o => o.trim()).filter(Boolean)
     : ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+        // Allow requests with no origin (mobile apps, Postman, server-to-server)
         if (!origin) return callback(null, true);
 
+        // Check if origin is in allowed list
         if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
             callback(null, true);
         } else {
+            console.warn(`⚠️  Blocked CORS request from origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // 3. Body parsing with size limits

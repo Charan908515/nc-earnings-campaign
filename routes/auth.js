@@ -33,16 +33,27 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please provide UPI ID and password' });
         }
 
+        // Input length validation
+        if (upiId.length > 100) {
+            return res.status(400).json({ success: false, message: 'Invalid input length' });
+        }
+        if (password.length > 128) {
+            return res.status(400).json({ success: false, message: 'Invalid input length' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        }
+
         // Validate UPI ID format
         const upiPattern = new RegExp(campaignConfig.userInput.upi.pattern);
         if (!upiPattern.test(upiId)) {
             return res.status(400).json({ success: false, message: 'Invalid UPI ID format' });
         }
 
-        // Check if user already exists (by UPI ID)
+        // Check if user already exists (by UPI ID) - Generic error message for security
         const existingUser = await User.findOne({ upiId });
         if (existingUser) {
-            return res.status(400).json({ success: false, message: 'UPI ID already registered' });
+            return res.status(400).json({ success: false, message: 'Registration failed. Please try a different UPI ID' });
         }
 
         // Extract mobile number from UPI ID if flag is enabled (for affiliate links)
@@ -100,7 +111,12 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please provide UPI ID and password' });
         }
 
-        // Find user by UPI ID
+        // Input length validation
+        if (upiId.length > 100 || password.length > 128) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        // Find user by UPI ID - Use generic error message
         const user = await User.findOne({ upiId });
         if (!user) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
