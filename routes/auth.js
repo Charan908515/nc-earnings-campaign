@@ -4,9 +4,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const campaignConfig = require('../config/campaigns.config');
 
+// Get active campaign
+const getActiveCampaign = () => campaignConfig.getActiveCampaign();
+
 // Helper function to extract mobile number from UPI ID
-function extractMobileFromUPI(upiId) {
-    if (!campaignConfig.userInput.extractMobileFromUPI) {
+function extractMobileFromUPI(upiId, campaign) {
+    if (!campaign.userInput.extractMobileFromUPI) {
         return null;
     }
 
@@ -27,6 +30,7 @@ function extractMobileFromUPI(upiId) {
 router.post('/register', async (req, res) => {
     try {
         const { upiId, password } = req.body;
+        const activeCampaign = getActiveCampaign();
 
         // Validate input
         if (!upiId || !password) {
@@ -45,7 +49,7 @@ router.post('/register', async (req, res) => {
         }
 
         // Validate UPI ID format
-        const upiPattern = new RegExp(campaignConfig.userInput.upi.pattern);
+        const upiPattern = new RegExp(activeCampaign.userInput.upi.pattern);
         if (!upiPattern.test(upiId)) {
             return res.status(400).json({ success: false, message: 'Invalid UPI ID format' });
         }
@@ -58,7 +62,7 @@ router.post('/register', async (req, res) => {
 
         // Extract mobile number from UPI ID if flag is enabled (for affiliate links)
         let mobileNumber = null;
-        if (campaignConfig.userInput.extractMobileFromUPI) {
+        if (activeCampaign.userInput.extractMobileFromUPI) {
             const username = upiId.split('@')[0];
             const digits = username.replace(/\D/g, '');
             if (digits.length >= 10) {
@@ -73,6 +77,17 @@ router.post('/register', async (req, res) => {
             password
         });
         await user.save();
+
+        // Log user registration details
+        console.log('\n' + '='.repeat(60));
+        console.log('✅ NEW USER REGISTERED');
+        console.log('='.repeat(60));
+        console.log('🆔 MongoDB ID:', user._id);
+        console.log('💳 UPI ID:', user.upiId);
+        console.log('📱 Mobile Number:', user.mobileNumber);
+        console.log('💰 Initial Balance:', user.availableBalance);
+        console.log('📅 Registration Time:', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+        console.log('='.repeat(60) + '\n');
 
         // Generate JWT token with shorter expiration
         const token = jwt.sign(

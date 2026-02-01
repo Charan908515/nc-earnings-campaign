@@ -83,14 +83,17 @@ router.get('/', async (req, res) => {
         // Try to find user by mobile number first
         user = await User.findOne({ mobileNumber: userId });
 
-        // If not found and userId looks like a UPI ID, try finding by UPI ID
-        if (!user && userId.includes('@')) {
+        // If not found, try finding by UPI ID
+        if (!user) {
             user = await User.findOne({ upiId: userId });
-            console.log(`🔍 Searching by UPI ID: ${userId}`);
+            if (user) {
+                console.log(`🔍 Found user by UPI ID: ${userId}`);
+            }
         }
 
         if (!user) {
             console.log(`⚠️ User not found for identifier: ${userId}`);
+            console.log(`   Searched in both mobileNumber and upiId fields`);
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
