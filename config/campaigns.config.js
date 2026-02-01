@@ -168,3 +168,5 @@ module.exports = {
         return this.campaigns.find(c => c.isActive) || this.campaigns[0];
     }
 };
+
+
