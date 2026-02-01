@@ -17,6 +17,31 @@ const withdrawalsTable = document.getElementById('withdrawalsTable');
 const logoutBtn = document.getElementById('logoutBtn');
 
 let userData = null;
+let config = null;
+
+// Load campaign configuration
+async function loadCampaignConfig() {
+    try {
+        const response = await fetch('/api/config/public');
+        if (response.ok) {
+            config = await response.json();
+            // Update page branding
+            const logoEl = document.getElementById('campaignLogo');
+            const titleEl = document.getElementById('pageTitle');
+            if (logoEl && config.campaign && config.campaign.branding) {
+                logoEl.textContent = config.campaign.branding.logoText || 'NC Earnings';
+            }
+            if (titleEl && config.campaign) {
+                titleEl.textContent = `My Wallet - ${config.campaign.name || 'NC Earnings'}`;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load campaign config:', error);
+        // Use defaults
+        const logoEl = document.getElementById('campaignLogo');
+        if (logoEl) logoEl.textContent = 'NC Earnings';
+    }
+}
 
 // Show alert
 function showAlert(message, type = 'error') {
@@ -249,6 +274,7 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // Initialize
+loadCampaignConfig();
 loadBalance();
 loadEarningsHistory();
 loadWithdrawalHistory();

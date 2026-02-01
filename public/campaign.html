@@ -13,25 +13,247 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background: var(--bg-light);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .campaign-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
         }
 
         .campaign-card {
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 40px;
-            max-width: 450px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 50px 40px;
+            max-width: 480px;
             width: 100%;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             text-align: center;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .campaign-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            border-radius: 20px 20px 0 0;
+        }
+
+        #campaignLogo {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .campaign-title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 800;
+            margin-bottom: 15px;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+
+        #campaignDescription {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            color: #1e293b;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        #walletLink {
+            display: inline-block;
+            margin-top: 25px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        #walletLink::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        #walletLink:hover::after {
+            width: 100%;
+        }
+
+        #walletLink:hover {
+            color: #764ba2;
+        }
+
+        .alert {
+            padding: 14px 18px;
+            border-radius: 10px;
             margin-bottom: 20px;
-            color: var(--text);
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 640px) {
+            .campaign-card {
+                padding: 40px 30px;
+            }
+
+            #campaignLogo {
+                font-size: 28px;
+            }
+
+            .campaign-title {
+                font-size: 26px;
+            }
+
+            #campaignDescription {
+                font-size: 15px;
+            }
         }
     </style>
 </head>
@@ -39,28 +261,25 @@
 <body>
     <div class="campaign-container">
         <div class="campaign-card fade-in">
-            <h1 class="logo" id="campaignLogo" style="margin-bottom: 30px;">LOADING...</h1>
+            <h1 id="campaignLogo">NC Earnings</h1>
             <h2 class="campaign-title" id="campaignTagline">Start Campaign</h2>
-            <p class="text-muted" id="campaignDescription" style="margin-bottom: 30px;">Enter your details to access the
-                offer.</p>
+            <p id="campaignDescription">Enter your details to access the offer.</p>
 
             <form id="campaignForm">
-                <div class="form-group" style="text-align: left;">
+                <div class="form-group">
                     <label class="form-label" id="inputLabel">Your Mobile Number</label>
                     <input type="text" id="userInput" class="form-input" placeholder="Enter details" required>
                 </div>
 
                 <div id="alertContainer"></div>
 
-                <button type="submit" class="btn btn-primary btn-block">
+                <button type="submit" class="btn btn-primary">
                     <span id="submitButtonText">Proceed to Offer</span>
                 </button>
             </form>
 
-            <div style="margin-top: 20px;">
-                <a href="/index.html" id="walletLink"
-                    style="color: var(--primary-light); text-decoration: none; font-size: 14px;">Check
-                    Earnings / Wallet</a>
+            <div>
+                <a href="/index.html" id="walletLink">Check Earnings / Wallet</a>
             </div>
         </div>
     </div>
