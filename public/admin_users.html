@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1 class="logo">Manage Users</h1>
+            <a href="/admin.html" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="alertContainer"></div>
+
+        <div class="card fade-in">
+            <h2 class="card-header">Registered Users</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mobile</th>
+                            <th>Total Earnings</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <tr>
+                            <td colspan="5" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://campaign-2-production.up.railway.app/api';
+        const usersTable = document.getElementById('usersTable');
+
+        // Credentials from local storage (simplified for this demo, strictly should verify with server)
+        // In a real app we would pass the token or verify session. 
+        // For now, we assume if they got to this page, they have the credentials.
+        // We will prompt for them again or store them in sessionStorage.
+
+        // Actually, let's use the same credentials prompt or sessionStorage
+        const adminUser = sessionStorage.getItem('adminUser');
+        const adminPass = sessionStorage.getItem('adminPass');
+
+        if (!adminUser || !adminPass) {
+            alert('Please login from the dashboard first');
+            window.location.href = '/admin.html';
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}/admin/users`, {
+                    headers: { 'username': adminUser, 'password': adminPass }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    renderUsers(data.data);
+                } else {
+                    alert('Failed to load users');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderUsers(users) {
+            if (users.length === 0) {
+                usersTable.innerHTML = '<tr><td colspan="5" class="text-center">No users found</td></tr>';
+                return;
+            }
+
+            usersTable.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.mobileNumber}</td>
+                    <td>₹${user.totalEarnings}</td>
+                    <td>₹${user.availableBalance}</td>
+                    <td>
+                        <span class="badge ${user.isSuspended ? 'badge-danger' : 'badge-success'}">
+                            ${user.isSuspended ? 'Suspended' : 'Active'}
+                        </span>
+                    </td>
+                    <td>
+                        ${user.isSuspended
+                    ? `<button class="btn btn-success" onclick="toggleSuspend('${user._id}', false)">Unsuspend</button>`
+                    : `<button class="btn btn-danger" onclick="toggleSuspend('${user._id}', true)">Suspend</button>`
+                }
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function toggleSuspend(userId, suspend) {
+            const action = suspend ? 'suspend' : 'unsuspend';
+            if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}/${action}`, {
+                    method: 'POST',
+                    headers: { 'username': adminUser, 'password': adminPass }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadUsers(); // Reload table
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert('Error processing request');
+            }
+        }
+
+        loadUsers();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wallet - NC Earnings Campaign</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1 class="logo">NC Earnings</h1>
+            <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+                <a href="https://t.me/ncearnings123bot" target="_blank" class="btn btn-secondary"
+                    style="font-size: 13px; padding: 8px 16px;">
+                    🤖 Bot Notifications
+                </a>
+                <button class="btn btn-secondary" id="logoutBtn"
+                    style="font-size: 13px; padding: 8px 16px;">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="alertContainer"></div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid fade-in">
+            <div class="stat-card" style="grid-column: 1 / -1;">
+                <div class="stat-label">Available Balance</div>
+                <div class="stat-value">₹<span id="availableBalance">0</span></div>
+            </div>
+        </div>
+
+        <!-- Bot Instruction (Small) -->
+        <div class="fade-in"
+            style="margin-bottom: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
+            To enable notifications, send: <code
+                style="background: rgba(139, 92, 246, 0.2); padding: 4px 8px; border-radius: 4px; color: var(--primary-light);">/start <span id="userMobileForBot">YOUR_UPI_ID</span></code>
+            to the bot.
+        </div>
+
+        <!-- Withdrawal Section -->
+        <div class="card fade-in">
+            <h2 class="card-header">Withdraw Earnings</h2>
+
+            <button id="showWithdrawBtn" class="btn btn-success btn-block" style="margin-bottom: 0;">
+                💸 Withdraw Funds
+            </button>
+
+            <div id="withdrawSection" class="hidden" style="margin-top: 20px;">
+                <form id="withdrawForm">
+                    <div class="form-group">
+                        <label class="form-label" for="upiId">UPI ID</label>
+                        <input type="text" id="upiId" class="form-input" placeholder="yourname@upi" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Withdrawal Amount</label>
+                        <input type="text" class="form-input" id="withdrawAmount" readonly>
+                        <small class="text-muted">Your entire available balance will be withdrawn</small>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-secondary" id="cancelWithdrawBtn"
+                            style="flex: 1;">Cancel</button>
+                        <button type="submit" class="btn btn-success" id="withdrawBtn" style="flex: 2;">
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Earnings History -->
+        <div class="card fade-in">
+            <h2 class="card-header">Earnings History</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Campaign</th>
+                            <th>Event Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="earningsTable">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Withdrawal History -->
+        <div class="card fade-in">
+            <h2 class="card-header">Withdrawal History</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>UPI ID</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawalsTable">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/wallet.js"></script>
+</body>
+
+</html>

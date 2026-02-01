@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">NC Earnings Campaign - Quick Access</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .campaign-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: var(--bg-light);
+        }
+
+        .campaign-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 40px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .campaign-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="campaign-container">
+        <div class="campaign-card fade-in">
+            <h1 class="logo" id="campaignLogo" style="margin-bottom: 30px;">LOADING...</h1>
+            <h2 class="campaign-title" id="campaignTagline">Start Campaign</h2>
+            <p class="text-muted" id="campaignDescription" style="margin-bottom: 30px;">Enter your details to access the
+                offer.</p>
+
+            <form id="campaignForm">
+                <div class="form-group" style="text-align: left;">
+                    <label class="form-label" id="inputLabel">Your Mobile Number</label>
+                    <input type="text" id="userInput" class="form-input" placeholder="Enter details" required>
+                </div>
+
+                <div id="alertContainer"></div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span id="submitButtonText">Proceed to Offer</span>
+                </button>
+            </form>
+
+            <div style="margin-top: 20px;">
+                <a href="/index.html" id="walletLink"
+                    style="color: var(--primary-light); text-decoration: none; font-size: 14px;">Check
+                    Earnings / Wallet</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration object (will be loaded from server)
+        let config = null;
+
+        // Load configuration from server
+        async function loadConfig() {
+            try {
+                // Extract slug from URL (e.g., /campaign/story-tv)
+                const pathSegments = window.location.pathname.split('/').filter(Boolean);
+                // Assumption: Path is /campaign/:slug, so slug is the last segment
+                const slug = pathSegments[pathSegments.length - 1];
+
+                console.log('Loading config for slug:', slug);
+
+                const response = await fetch(`/api/config/public?slug=${slug}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load configuration');
+                }
+                config = await response.json();
+                applyConfig();
+            } catch (error) {
+                console.error('Error loading config:', error);
+                // Fallback to default values
+                config = {
+                    campaign: {
+                        name: 'Story TV',
+                        branding: {
+                            logoText: 'STORY TV',
+                            tagline: 'Start Campaign'
+                        },
+                        description: 'Complete tasks and earn cashback rewards'
+                    },
+                    userInput: {
+                        fieldType: 'mobile',
+                        mobile: {
+                            label: 'Your Mobile Number',
+                            placeholder: 'Enter 10-digit mobile number',
+                            maxLength: 10,
+                            pattern: '[0-9]{10}',
+                            errorMessage: 'Please enter a valid 10-digit mobile number'
+                        }
+                    },
+                    affiliate: {
+                        baseUrl: 'https://aff.pro-campaign.in/c',
+                        offerId: 38,
+                        affiliateId: 49,
+                        subAffiliateId: 'Chakri'
+                    },
+                    ui: {
+                        submitButtonText: 'Proceed to Offer',
+                        walletLinkText: 'Check Earnings / Wallet'
+                    }
+                };
+                applyConfig();
+            }
+        }
+
+        // Apply configuration to the page
+        function applyConfig() {
+            // Update page title and branding
+            document.getElementById('pageTitle').textContent = `${config.campaign.name} Campaign - Quick Access`;
+            document.getElementById('campaignLogo').textContent = config.campaign.branding.logoText;
+            document.getElementById('campaignTagline').textContent = config.campaign.branding.tagline;
+            document.getElementById('campaignDescription').textContent = config.campaign.description;
+
+            // Update button text
+            document.getElementById('submitButtonText').textContent = config.ui.submitButtonText;
+            document.getElementById('walletLink').textContent = config.ui.walletLinkText;
+
+            // Configure input field based on type
+            const inputField = document.getElementById('userInput');
+            const inputLabel = document.getElementById('inputLabel');
+
+            const fieldConfig = config.userInput[config.userInput.fieldType];
+
+            inputLabel.textContent = fieldConfig.label;
+            inputField.placeholder = fieldConfig.placeholder;
+            inputField.maxLength = fieldConfig.maxLength;
+            inputField.pattern = fieldConfig.pattern;
+
+            // Store field type for validation
+            inputField.dataset.fieldType = config.userInput.fieldType;
+            inputField.dataset.errorMessage = fieldConfig.errorMessage;
+        }
+
+        // Form submission handler
+        document.getElementById('campaignForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            if (!config) {
+                alert('Configuration not loaded. Please refresh the page.');
+                return;
+            }
+
+            const userInput = document.getElementById('userInput').value;
+            const alertContainer = document.getElementById('alertContainer');
+            const fieldType = document.getElementById('userInput').dataset.fieldType;
+            const errorMessage = document.getElementById('userInput').dataset.errorMessage;
+
+            // Validate based on field type
+            const fieldConfig = config.userInput[fieldType];
+            const validationRegex = new RegExp(fieldConfig.pattern);
+
+            if (!validationRegex.test(userInput)) {
+                alertContainer.innerHTML = `<div class="alert alert-error">${errorMessage}</div>`;
+                return;
+            }
+
+            // Extract mobile number from UPI ID if flag is enabled
+            let clickId = userInput;
+
+            if (config.userInput.extractMobileFromUPI && fieldType === 'upi') {
+                // Extract username before @ symbol
+                const username = userInput.split('@')[0];
+
+                // Extract first 10 digits
+                const digits = username.replace(/\D/g, '');
+
+                if (digits.length >= 10) {
+                    clickId = digits.substring(0, 10);
+                } else {
+                    alertContainer.innerHTML = `<div class="alert alert-error">UPI ID must start with a 10-digit mobile number</div>`;
+                    return;
+                }
+            }
+
+            // Build affiliate link with extracted mobile or full UPI
+            // Use property name from config or default to 'click_id' if missing
+            const clickIdParam = config.affiliate.clickIdParam || 'click_id';
+            const subAffiliateId = config.affiliate.subAffiliateId || '';
+            const subAffParam = subAffiliateId ? `&sub_aff_id=${subAffiliateId}` : '';
+
+            const affiliateLink = `${config.affiliate.baseUrl}?o=${config.affiliate.offerId}&a=${config.affiliate.affiliateId}&${clickIdParam}=${clickId}${subAffParam}`;
+
+            console.log('🚀 Campaign Submit Clicked');
+            console.log(`📱 User Input (${fieldType}):`, userInput);
+            console.log(`🔗 Click ID (for affiliate):`, clickId);
+            console.log('🔗 Generated Link:', affiliateLink);
+
+            window.location.href = affiliateLink;
+        });
+
+        // Load config when page loads
+        loadConfig();
+    </script>
+</body>
+
+</html>
