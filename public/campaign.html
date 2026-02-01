@@ -5,17 +5,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">NC Earnings Campaign - Quick Access</title>
-    <link rel="stylesheet" href="/css/style.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #ffffff;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
         .campaign-container {
             min-height: 100vh;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 16px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             overflow: hidden;
+            z-index: 1000;
         }
 
         .campaign-container::before {
@@ -29,14 +53,22 @@
             animation: pulse 15s ease-in-out infinite;
         }
 
-        @keyframes pulse {
+        .campaign-container::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite reverse;
+        }
 
-            0%,
-            100% {
+        @keyframes pulse {
+            0%, 100% {
                 transform: scale(1);
                 opacity: 0.5;
             }
-
             50% {
                 transform: scale(1.1);
                 opacity: 0.8;
@@ -44,26 +76,23 @@
         }
 
         .campaign-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            padding: 50px 40px;
-            max-width: 480px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 32px 20px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
             text-align: center;
             position: relative;
-            z-index: 1;
+            z-index: 2;
             animation: slideUp 0.6s ease-out;
         }
 
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(40px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -76,84 +105,103 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
-            border-radius: 20px 20px 0 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            border-radius: 24px 24px 0 0;
         }
 
         #campaignLogo {
-            font-size: 36px;
+            font-size: 24px;
             font-weight: 900;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
+            margin-bottom: 12px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
         }
 
         .campaign-title {
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 15px;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
             color: #1e293b;
-            line-height: 1.2;
+            line-height: 1.3;
+            letter-spacing: 0.3px;
         }
 
         #campaignDescription {
-            font-size: 16px;
+            font-size: 14px;
             color: #64748b;
-            margin-bottom: 35px;
+            margin-bottom: 28px;
             line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .fade-in {
+            animation: slideUp 0.6s ease-out;
         }
 
         .form-group {
             text-align: left;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-weight: 600;
             color: #1e293b;
-            font-size: 15px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .form-input {
             width: 100%;
-            padding: 16px 20px;
-            background: #ffffff;
+            padding: 14px 16px;
+            background: #f8fafc;
             border: 2px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 10px;
             color: #1e293b;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .form-input::placeholder {
+            color: #cbd5e1;
         }
 
         .form-input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
         .btn-primary {
-            width: 100%;
-            padding: 18px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 17px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
 
         .btn-primary::before {
@@ -163,32 +211,46 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
             transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
         }
 
         .btn-primary:hover::before {
             left: 100%;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
-        .btn-primary:active {
-            transform: translateY(-1px);
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .wallet-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
         }
 
         #walletLink {
             display: inline-block;
-            margin-top: 25px;
             color: #667eea;
             text-decoration: none;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             transition: all 0.3s ease;
             position: relative;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         #walletLink::after {
@@ -202,21 +264,22 @@
             transition: width 0.3s ease;
         }
 
-        #walletLink:hover::after {
-            width: 100%;
-        }
-
         #walletLink:hover {
             color: #764ba2;
         }
 
+        #walletLink:hover::after {
+            width: 100%;
+        }
+
         .alert {
-            padding: 14px 18px;
+            padding: 12px 16px;
             border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 500;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 600;
             animation: slideDown 0.3s ease;
+            border-left: 4px solid;
         }
 
         @keyframes slideDown {
@@ -224,7 +287,6 @@
                 opacity: 0;
                 transform: translateY(-10px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -233,18 +295,26 @@
 
         .alert-error {
             background: #fee2e2;
-            border: 1px solid #ef4444;
+            border-color: #ef4444;
             color: #991b1b;
         }
 
-        /* Mobile Responsive */
-        @media (max-width: 640px) {
+        .alert-success {
+            background: #dcfce7;
+            border-color: #10b981;
+            color: #15803d;
+        }
+
+        @media (min-width: 480px) {
             .campaign-card {
-                padding: 40px 30px;
+                padding: 40px 28px;
+                border-radius: 28px;
+                max-width: 420px;
             }
 
             #campaignLogo {
                 font-size: 28px;
+                margin-bottom: 16px;
             }
 
             .campaign-title {
@@ -253,6 +323,73 @@
 
             #campaignDescription {
                 font-size: 15px;
+                margin-bottom: 32px;
+            }
+
+            .form-input {
+                padding: 15px 18px;
+                font-size: 16px;
+            }
+
+            .btn {
+                padding: 15px 24px;
+                font-size: 16px;
+            }
+
+            #walletLink {
+                font-size: 14px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .campaign-container {
+                padding: 24px;
+            }
+
+            .campaign-card {
+                padding: 48px 40px;
+                border-radius: 32px;
+                max-width: 480px;
+                box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            }
+
+            #campaignLogo {
+                font-size: 32px;
+                margin-bottom: 20px;
+            }
+
+            .campaign-title {
+                font-size: 28px;
+                margin-bottom: 16px;
+            }
+
+            #campaignDescription {
+                font-size: 16px;
+                margin-bottom: 36px;
+            }
+
+            .form-group {
+                margin-bottom: 24px;
+            }
+
+            .form-input {
+                padding: 16px 20px;
+                font-size: 16px;
+            }
+
+            .btn {
+                padding: 16px 28px;
+                font-size: 17px;
+            }
+
+            #walletLink {
+                font-size: 15px;
+                margin-top: 28px;
+            }
+
+            .wallet-section {
+                margin-top: 32px;
+                padding-top: 24px;
             }
         }
     </style>
@@ -265,35 +402,46 @@
             <h2 class="campaign-title" id="campaignTagline">Start Campaign</h2>
             <p id="campaignDescription">Enter your details to access the offer.</p>
 
-            <form id="campaignForm">
-                <div class="form-group">
-                    <label class="form-label" id="inputLabel">Your Mobile Number</label>
-                    <input type="text" id="userInput" class="form-input" placeholder="Enter details" required>
-                </div>
+            <div id="alertContainer"></div>
 
-                <div id="alertContainer"></div>
+            <form id="campaignForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" id="inputLabel" for="userInput">Your Mobile Number</label>
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        class="form-input" 
+                        placeholder="Enter details" 
+                        required
+                        autocomplete="tel"
+                    >
+                </div>
 
                 <button type="submit" class="btn btn-primary">
                     <span id="submitButtonText">Proceed to Offer</span>
                 </button>
             </form>
 
-            <div>
+            <div class="wallet-section">
                 <a href="/index.html" id="walletLink">Check Earnings / Wallet</a>
             </div>
         </div>
     </div>
 
     <script>
-        // Configuration object (will be loaded from server)
         let config = null;
 
-        // Load configuration from server
+        function showAlert(message, type = 'error') {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
         async function loadConfig() {
             try {
-                // Extract slug from URL (e.g., /campaign/story-tv)
                 const pathSegments = window.location.pathname.split('/').filter(Boolean);
-                // Assumption: Path is /campaign/:slug, so slug is the last segment
                 const slug = pathSegments[pathSegments.length - 1];
 
                 console.log('Loading config for slug:', slug);
@@ -306,7 +454,6 @@
                 applyConfig();
             } catch (error) {
                 console.error('Error loading config:', error);
-                // Fallback to default values
                 config = {
                     campaign: {
                         name: 'Story TV',
@@ -341,19 +488,15 @@
             }
         }
 
-        // Apply configuration to the page
         function applyConfig() {
-            // Update page title and branding
             document.getElementById('pageTitle').textContent = `${config.campaign.name} Campaign - Quick Access`;
             document.getElementById('campaignLogo').textContent = config.campaign.branding.logoText;
             document.getElementById('campaignTagline').textContent = config.campaign.branding.tagline;
             document.getElementById('campaignDescription').textContent = config.campaign.description;
 
-            // Update button text
             document.getElementById('submitButtonText').textContent = config.ui.submitButtonText;
             document.getElementById('walletLink').textContent = config.ui.walletLinkText;
 
-            // Configure input field based on type
             const inputField = document.getElementById('userInput');
             const inputLabel = document.getElementById('inputLabel');
 
@@ -364,69 +507,83 @@
             inputField.maxLength = fieldConfig.maxLength;
             inputField.pattern = fieldConfig.pattern;
 
-            // Store field type for validation
             inputField.dataset.fieldType = config.userInput.fieldType;
             inputField.dataset.errorMessage = fieldConfig.errorMessage;
         }
 
-        // Form submission handler
-        document.getElementById('campaignForm').addEventListener('submit', function (e) {
+        document.getElementById('campaignForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             if (!config) {
-                alert('Configuration not loaded. Please refresh the page.');
+                showAlert('Configuration not loaded. Please refresh the page.', 'error');
                 return;
             }
 
-            const userInput = document.getElementById('userInput').value;
-            const alertContainer = document.getElementById('alertContainer');
+            const userInput = document.getElementById('userInput').value.trim();
+            const submitButton = document.querySelector('.btn-primary');
             const fieldType = document.getElementById('userInput').dataset.fieldType;
             const errorMessage = document.getElementById('userInput').dataset.errorMessage;
 
-            // Validate based on field type
-            const fieldConfig = config.userInput[fieldType];
-            const validationRegex = new RegExp(fieldConfig.pattern);
+            document.getElementById('alertContainer').innerHTML = '';
 
-            if (!validationRegex.test(userInput)) {
-                alertContainer.innerHTML = `<div class="alert alert-error">${errorMessage}</div>`;
+            if (!userInput) {
+                showAlert('Please enter your details', 'error');
                 return;
             }
 
-            // Extract mobile number from UPI ID if flag is enabled
+            const fieldConfig = config.userInput[fieldType];
+            const validationRegex = new RegExp(`^${fieldConfig.pattern}$`);
+
+            if (!validationRegex.test(userInput)) {
+                showAlert(errorMessage, 'error');
+                return;
+            }
+
+            submitButton.disabled = true;
+            const originalText = document.getElementById('submitButtonText').textContent;
+            document.getElementById('submitButtonText').textContent = 'Processing...';
+
             let clickId = userInput;
 
             if (config.userInput.extractMobileFromUPI && fieldType === 'upi') {
-                // Extract username before @ symbol
                 const username = userInput.split('@')[0];
-
-                // Extract first 10 digits
                 const digits = username.replace(/\D/g, '');
-
                 if (digits.length >= 10) {
                     clickId = digits.substring(0, 10);
                 } else {
-                    alertContainer.innerHTML = `<div class="alert alert-error">UPI ID must start with a 10-digit mobile number</div>`;
+                    showAlert('UPI ID must start with a 10-digit mobile number', 'error');
+                    submitButton.disabled = false;
+                    document.getElementById('submitButtonText').textContent = originalText;
                     return;
                 }
             }
 
-            // Build affiliate link with extracted mobile or full UPI
-            // Use property name from config or default to 'click_id' if missing
-            const clickIdParam = config.affiliate.clickIdParam || 'click_id';
-            const subAffiliateId = config.affiliate.subAffiliateId || '';
-            const subAffParam = subAffiliateId ? `&sub_aff_id=${subAffiliateId}` : '';
-
-            const affiliateLink = `${config.affiliate.baseUrl}?o=${config.affiliate.offerId}&a=${config.affiliate.affiliateId}&${clickIdParam}=${clickId}${subAffParam}`;
+            // Use buildLink from config if available
+            let affiliateLink;
+            if (config.affiliate && typeof config.affiliate.buildLink === 'function') {
+                affiliateLink = config.affiliate.buildLink(clickId);
+            } else {
+                // fallback to previous logic
+                const clickIdParam = config.affiliate.clickIdParam || 'click_id';
+                const subAffiliateId = config.affiliate.subAffiliateId || '';
+                const subAffParam = subAffiliateId ? `&sub_aff_id=${subAffiliateId}` : '';
+                affiliateLink = `${config.affiliate.baseUrl}?o=${config.affiliate.offerId}&a=${config.affiliate.affiliateId}&${clickIdParam}=${clickId}${subAffParam}`;
+            }
 
             console.log('🚀 Campaign Submit Clicked');
             console.log(`📱 User Input (${fieldType}):`, userInput);
             console.log(`🔗 Click ID (for affiliate):`, clickId);
             console.log('🔗 Generated Link:', affiliateLink);
 
-            window.location.href = affiliateLink;
+            setTimeout(() => {
+                window.location.href = affiliateLink;
+            }, 300);
         });
 
-        // Load config when page loads
+        document.getElementById('userInput').addEventListener('focus', function () {
+            document.getElementById('alertContainer').innerHTML = '';
+        });
+
         loadConfig();
     </script>
 </body>

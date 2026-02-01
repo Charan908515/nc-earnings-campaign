@@ -33,12 +33,12 @@ module.exports = {
             // ----------------------------------------
             affiliate: {
                 baseUrl: 'https://aff.pro-campaign.in/c',
-                offerId: 38,
+                offerId: 31,
                 affiliateId: 49,
                 clickIdParam: 'aff_click_id',
                 // Legacy support if needed server-side
                 buildLink: function (userId) {
-                    return `${this.baseUrl}?o=${this.offerId}&a=${this.affiliateId}&${this.clickIdParam}=${userId}`;
+                    return `${this.baseUrl}?o=${this.offerId}&a=${this.affiliateId}&${this.clickIdParam}=${userId}&sub_aff_id="Chakri"`;
                 }
             },
 

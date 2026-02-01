@@ -156,6 +156,13 @@ app.get('/c/:slug', async (req, res) => {
             `);
         }
 
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
+        });
+
         res.sendFile(__dirname + '/public/campaign.html');
     } catch (err) {
         console.error('Error checking campaign state:', err);
