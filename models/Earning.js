@@ -13,7 +13,22 @@ const earningSchema = new mongoose.Schema({
     eventType: {
         type: String,
         required: true,
-        enum: ['S-install', 'S_trail', 'Install', 'Trial Purchase', 'Pc_Install', 'Pc_Trial']
+        enum: (() => {
+            // Dynamically load all event displayNames from campaigns config
+            const campaignsConfig = require('../config/campaigns.config');
+            const eventNames = [];
+            for (const campaign of campaignsConfig.campaigns) {
+                if (campaign.events) {
+                    for (const eventKey of Object.keys(campaign.events)) {
+                        const displayName = campaign.events[eventKey].displayName;
+                        if (displayName && !eventNames.includes(displayName)) {
+                            eventNames.push(displayName);
+                        }
+                    }
+                }
+            }
+            return eventNames;
+        })()
     },
     payment: {
         type: Number,
