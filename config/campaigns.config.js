@@ -67,7 +67,7 @@ module.exports = {
                 trail: {
                     identifiers: ['Pc_Trial', 'trial', 'registration', 'Register'],
                     displayName: 'Trail Purchase',
-                    amount: 23
+                    amount: 25
                 },
 
             },
