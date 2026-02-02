@@ -33,7 +33,7 @@ module.exports = {
             // ----------------------------------------
             affiliate: {
                 baseUrl: 'https://aff.pro-campaign.in/c',
-                offerId: 31,
+                offerId: 38,
                 affiliateId: 49,
                 clickIdParam: 'aff_click_id',
                 // Legacy support if needed server-side
