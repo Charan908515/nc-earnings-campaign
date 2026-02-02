@@ -77,7 +77,7 @@ module.exports = {
             // ----------------------------------------
             branding: {
                 logoText: 'Story TV',
-                tagline: 'Install and Ruy Trail get 25 rupees',
+                tagline: 'Install and Buy Trail get 25 rupees',
                 campaignDisplayName: 'Story TV Offer'
             },
 
