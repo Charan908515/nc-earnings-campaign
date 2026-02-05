@@ -570,10 +570,6 @@
                 affiliateLink = `${config.affiliate.baseUrl}?o=${config.affiliate.offerId}&a=${config.affiliate.affiliateId}&${clickIdParam}=${clickId}${subAffParam}`;
             }
 
-            console.log('🚀 Campaign Submit Clicked');
-            console.log(`📱 User Input (${fieldType}):`, userInput);
-            console.log(`🔗 Click ID (for affiliate):`, clickId);
-            console.log('🔗 Generated Link:', affiliateLink);
 
             setTimeout(() => {
                 window.location.href = affiliateLink;
