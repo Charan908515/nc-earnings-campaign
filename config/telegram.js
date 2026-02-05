@@ -290,7 +290,7 @@ ${emoji} <b>${telegram.notification.title}</b>
 
 ⏰ <b>Time:</b> ${time}
 
-${telegram.notification.footer.replace('@NC Earnings', `<a href="https://t.me/${telegram.botUsername}">@${telegram.botUsername}</a>`)}`;
+${telegram.notification.footer.replace('@NC Earnings', `<a href="https://t.me/ncearnings">@NC Earnings</a>`)}`;
 
         await userBot.sendMessage(user.chat_id, message, { parse_mode: 'HTML' });
         console.log(`📨 User notification sent to ${phone_number} (Total unpaid: ${payments.currency}${cumulativeEarnings})`);

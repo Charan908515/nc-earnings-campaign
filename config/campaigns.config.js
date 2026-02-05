@@ -60,12 +60,12 @@ module.exports = {
             // ----------------------------------------
             events: {
                 install: {
-                    identifiers: ['Pc_install', 'install', 'app_install', 'Install'],
+                    identifiers: ['Pc_install', 'install', 'app_install', 'Install','S_Install'],
                     displayName: 'Install',
                     amount: 0
                 },
                 trail: {
-                    identifiers: ['Pc_Trial', 'trial', 'registration', 'Register'],
+                    identifiers: ['Pc_Trial', 'S_Trial','trial', 'registration', 'Register'],
                     displayName: 'Trail Purchase',
                     amount: 25
                 },
