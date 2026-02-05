@@ -91,7 +91,7 @@ ${telegram.welcomeMessage.description}
 ✅ Once registered, you'll receive instant notifications for ALL campaigns when your postbacks arrive!
 
 🔕 Use /stop to disable notifications`,
-                { parse_mode: 'HTML' }
+                { parse_mode: 'HTML', disable_web_page_preview: true }
             );
             return;
         }
@@ -101,7 +101,7 @@ ${telegram.welcomeMessage.description}
             await userBot.sendMessage(
                 chatId,
                 '❌ Invalid UPI ID format. Please enter a valid UPI ID.\n\nExample: <code>/start 9876543210@paytm</code>',
-                { parse_mode: 'HTML' }
+                { parse_mode: 'HTML', disable_web_page_preview: true }
             );
             return;
         }
@@ -124,7 +124,7 @@ Your new UPI ID: <code>${upiInput}</code>
 🔔 Notifications: <b>ENABLED</b>
 
 📱 You'll receive alerts for ALL campaigns when postbacks arrive!`,
-                        { parse_mode: 'HTML' }
+                        { parse_mode: 'HTML', disable_web_page_preview: true }
                     );
                 } else {
                     await userBot.sendMessage(
@@ -134,7 +134,7 @@ Your new UPI ID: <code>${upiInput}</code>
 🔔 Notifications: <b>${user.notifications_enabled ? 'ENABLED' : 'DISABLED'}</b>
 
 📱 You'll receive alerts for ALL campaigns!`,
-                        { parse_mode: 'HTML' }
+                        { parse_mode: 'HTML', disable_web_page_preview: true }
                     );
                 }
             } else {
@@ -154,7 +154,7 @@ Your UPI ID: <code>${upiInput}</code>
 
 🔕 Use /stop to disable notifications
 📖 Use /help for more commands`,
-                    { parse_mode: 'HTML' }
+                    { parse_mode: 'HTML', disable_web_page_preview: true }
                 );
             }
         } catch (error) {
@@ -189,7 +189,7 @@ You will no longer receive automatic postback alerts.
 
 To enable notifications again, use:
 <code>/start ${user.phone_number}</code>`,
-                { parse_mode: 'HTML' }
+                { parse_mode: 'HTML', disable_web_page_preview: true }
             );
         } catch (error) {
             await userBot.sendMessage(chatId, '❌ Failed to update settings');
@@ -224,7 +224,7 @@ ${howItWorksText}
 Register once and get notifications for ALL campaigns!
 
 Need support? Contact the admin.`,
-            { parse_mode: 'HTML' }
+            { parse_mode: 'HTML', disable_web_page_preview: true }
         );
     });
 
@@ -292,7 +292,7 @@ ${emoji} <b>${telegram.notification.title}</b>
 
 ${telegram.notification.footer.replace('@NC Earnings', `<a href="https://t.me/ncearningssmart">@NC Campaigns</a>`)}`;
 
-        await userBot.sendMessage(user.chat_id, message, { parse_mode: 'HTML' });
+        await userBot.sendMessage(user.chat_id, message, { parse_mode: 'HTML', disable_web_page_preview: true });
         console.log(`📨 User notification sent to ${phone_number} (Total unpaid: ${payments.currency}${cumulativeEarnings})`);
 
     } catch (error) {
