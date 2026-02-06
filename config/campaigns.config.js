@@ -60,12 +60,12 @@ module.exports = {
             // ----------------------------------------
             events: {
                 install: {
-                    identifiers: ['Pc_install', 'install', 'app_install', 'Install','S_Install'],
+                    identifiers: ['Pc_install', 'S_Install'],
                     displayName: 'Install',
                     amount: 0
                 },
                 trail: {
-                    identifiers: ['Pc_Trial', 'S_Trial','trial', 'registration', 'Register'],
+                    identifiers: ['Pc_Trial', 'S_Trial'],
                     displayName: 'Trail Purchase',
                     amount: 25
                 },
@@ -176,12 +176,12 @@ module.exports = {
             // ----------------------------------------
             events: {
                 install: {
-                    identifiers: ['Pc_install', 'M_Install', 'app_install', 'Install','S_Install'],
+                    identifiers: ['M_Install'],
                     displayName: 'Install',
                     amount: 0
                 },
                 trail: {
-                    identifiers: ['Pc_Trial', 'S_Trial','M_Trial', 'registration', 'Register'],
+                    identifiers: ['M_Trail'],
                     displayName: 'Trail Purchase',
                     amount: 23
                 },
@@ -249,7 +249,6 @@ module.exports = {
                 minWithdrawal: 100
             }
         },
-        
 
 
         {
@@ -293,12 +292,12 @@ module.exports = {
             // ----------------------------------------
             events: {
                 install: {
-                    identifiers: ['Pc_install', 'M_Install', 'app_install', 'Inc_Install','S_Install'],
+                    identifiers: ['Inc_Install'],
                     displayName: 'Install',
                     amount: 0
                 },
                 trail: {
-                    identifiers: ['Pc_Trial', 'S_Trial','M_Trial', 'Inc_Purchase', 'Register'],
+                    identifiers: ['Inc_Purchase'],
                     displayName: 'Trail Purchase',
                     amount: 16
                 },
@@ -311,7 +310,7 @@ module.exports = {
             branding: {
                 logoText: 'Incred Gold',
                 tagline: 'Install and Buy Gold get 16 rupees',
-                campaignDisplayName: 'Ingred Gold Offer'
+                campaignDisplayName: 'Incred Gold Offer'
             },
 
             // ----------------------------------------
@@ -401,5 +400,3 @@ module.exports = {
         return this.campaigns.find(c => c.isActive) || this.campaigns[0];
     }
 };
-
-

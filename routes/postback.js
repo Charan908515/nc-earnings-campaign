@@ -5,14 +5,35 @@ const Earning = require('../models/Earning');
 const { sendUserNotification } = require('../config/telegram');
 const campaignsConfig = require('../config/campaigns.config');
 
-// Get active campaign based on request
+// Get campaign by offer ID
+const getCampaignByOfferId = (offerId) => {
+    return campaignsConfig.campaigns.find(c => String(c.affiliate.offerId) === String(offerId));
+};
+
+// Get active campaign based on request (cid fallback)
 const getCampaign = (cid) => campaignsConfig.getCampaign(cid);
 
 // Postback receiver endpoint - Universal handler for any affiliate network
 router.get('/', async (req, res) => {
     try {
-        const { cid } = req.query; // Campaign ID or Slug
-        const activeCampaign = getCampaign(cid);
+        const { cid, offer_id } = req.query;
+
+        // Try to find campaign by offer_id first (more reliable), then fall back to cid
+        let activeCampaign = null;
+        if (offer_id) {
+            activeCampaign = getCampaignByOfferId(offer_id);
+            if (activeCampaign) {
+                console.log(`🔍 Campaign detected by offer_id ${offer_id}: ${activeCampaign.name}`);
+            }
+        }
+
+        // Fall back to cid if offer_id didn't match
+        if (!activeCampaign) {
+            activeCampaign = getCampaign(cid);
+            if (activeCampaign) {
+                console.log(`🔍 Campaign detected by cid ${cid}: ${activeCampaign.name}`);
+            }
+        }
 
         if (!activeCampaign) {
             return res.status(404).json({
