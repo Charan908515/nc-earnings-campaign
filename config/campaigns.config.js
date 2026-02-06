@@ -132,6 +132,122 @@ module.exports = {
                 currency: '₹',
                 minWithdrawal: 100
             }
+        },
+
+
+        {
+            id: 'master-tv',
+            slug: 'master-tv', // Friendly URL slug
+            name: 'Master TV pro campaign',
+            description: 'Install > buy Trail',
+
+            // Campaign status
+            isActive: true,
+
+            // ----------------------------------------
+            // 🔗 AFFILIATE LINK CONFIGURATION
+            // ----------------------------------------
+            affiliate: {
+                baseUrl: 'https://aff.pro-campaign.in/c',
+                offerId: 44,
+                affiliateId: 49,
+                clickIdParam: 'aff_click_id',
+                // Legacy support if needed server-side
+                buildLink: function (userId) {
+                    return `${this.baseUrl}?o=${this.offerId}&a=${this.affiliateId}&${this.clickIdParam}=${userId}&sub_aff_id="Chakri"`;
+                }
+            },
+
+            // ----------------------------------------
+            // 📥 POSTBACK PARAMETER MAPPING
+            // ----------------------------------------
+            // Map the network's parameter names to our internal system
+            postbackMapping: {
+                userId: 'aff_click_id',          // Network sends: click_id
+                payment: 'payout',            // Network sends: payout
+                eventName: 'event_name',           // Network sends: event
+                offerId: 'offer_id',          // Network sends: offer_id (optional)
+                ipAddress: 'ip',              // Network sends: ip (optional)
+                timestamp: 't_time'        // Network sends: timestamp (optional)
+            },
+
+            // ----------------------------------------
+            // 💰 EVENT DEFINITIONS & PAYMENTS
+            // ----------------------------------------
+            events: {
+                install: {
+                    identifiers: ['Pc_install', 'M_Install', 'app_install', 'Install','S_Install'],
+                    displayName: 'Install',
+                    amount: 0
+                },
+                trail: {
+                    identifiers: ['Pc_Trial', 'S_Trial','M_Trial', 'registration', 'Register'],
+                    displayName: 'Trail Purchase',
+                    amount: 23
+                },
+
+            },
+
+            // ----------------------------------------
+            // 🎨 BRANDING & UI
+            // ----------------------------------------
+            branding: {
+                logoText: 'Master TV',
+                tagline: 'Install and Buy Trail get 23 rupees',
+                campaignDisplayName: 'Master TV Offer'
+            },
+
+            // ----------------------------------------
+            // 📱 USER INPUT CONFIGURATION
+            // ----------------------------------------
+            userInput: {
+                fieldType: 'mobile',  // 'mobile' or 'upi'
+                extractMobileFromUPI: true,  // Extract mobile from UPI ID for click_id
+
+                mobile: {
+                    label: 'Your Mobile Number',
+                    placeholder: 'Enter 10-digit mobile number',
+                    maxLength: 10,
+                    pattern: '[0-9]{10}',
+                    errorMessage: 'Please enter a valid 10-digit mobile number'
+                },
+
+                upi: {
+                    label: 'Your UPI ID',
+                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+                    maxLength: 50,
+                    pattern: '[a-zA-Z0-9.\\-_]{2,}@[a-zA-Z]{2,}',
+                    errorMessage: 'Please enter a valid UPI ID'
+                }
+            },
+
+            // ----------------------------------------
+            // 📱 TELEGRAM SETTINGS
+            // ----------------------------------------
+            telegram: {
+                botUsername: 'ncearnings123bot',
+                welcomeMessage: {
+                    title: 'Welcome to Master TV Campaign!',
+                    description: 'To register and get notifications:'
+                },
+                notification: {
+                    title: 'NEW CASHBACK RECEIVED!',
+                    showCumulativeEarnings: true,
+                    footer: 'Powered by @NC Earnings'
+                }
+            },
+
+            // ----------------------------------------
+            // ⚙️ ADDITIONAL SETTINGS
+            // ----------------------------------------
+            settings: {
+                enableDuplicateDetection: false,
+                verboseLogging: true,
+                timezone: 'Asia/Kolkata',
+                dateLocale: 'en-IN',
+                currency: '₹',
+                minWithdrawal: 100
+            }
         }
     ],
 
