@@ -118,6 +118,15 @@ module.exports = {
                     title: 'NEW CASHBACK RECEIVED!',
                     showCumulativeEarnings: true,
                     footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: 'Story TV Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the Story TV offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
                 }
             },
 
@@ -234,6 +243,15 @@ module.exports = {
                     title: 'NEW CASHBACK RECEIVED!',
                     showCumulativeEarnings: true,
                     footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: 'Master TV Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the Master TV offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
                 }
             },
 
@@ -350,6 +368,15 @@ module.exports = {
                     title: 'NEW CASHBACK RECEIVED!',
                     showCumulativeEarnings: true,
                     footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: 'Incred Gold Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the Incred Gold offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
                 }
             },
 
