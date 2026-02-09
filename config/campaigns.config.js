@@ -402,12 +402,8 @@ module.exports = {
 
             // Campaign status
             isActive: true,
-
-            // ----------------------------------------
-            // 🔗 AFFILIATE LINK CONFIGURATION
-            // ----------------------------------------
             affiliate: {
-                baseUrl: 'https://tuxcall9.com/m/qjmn4v4y',
+                baseUrl: 'https://track.affilify.in/nclk/mvkpn/kqfqr',
                 offerId: 156,
                 affiliateId: null,
                 clickIdParam: 'click_id',
@@ -490,7 +486,7 @@ module.exports = {
             telegram: {
                 botUsername: 'ncearnings123bot',
                 welcomeMessage: {
-                    title: 'Welcome to Story TV Aug\'24 Campaign!',
+                    title: 'Welcome to Story TV 24 Campaign!',
                     description: 'To register and get notifications:'
                 },
                 notification: {
@@ -499,10 +495,10 @@ module.exports = {
                     footer: 'Powered by @NC Earnings'
                 },
                 help: {
-                    title: 'Story TV Aug\'24 Help',
+                    title: 'Story TV 24 Help',
                     howItWorks: [
                         'Register with your UPI ID using /start YOUR_UPI_ID',
-                        'Complete the Story TV Aug\'24 offer',
+                        'Complete the Story TV 24 offer',
                         'Get notified when your postback arrives',
                         'Check your wallet for earnings'
                     ]
