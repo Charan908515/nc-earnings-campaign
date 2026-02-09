@@ -161,7 +161,7 @@ router.get('/', async (req, res) => {
             offerId: offerId || '',
             subId: req.query.sub_aff_id || req.query.sub1 || '',
             ipAddress: ipAddress || req.ip || '',
-            clickTime: timestamp ? new Date(parseInt(timestamp) * 1000) : null,
+            clickTime: (timestamp && timestamp !== 'null' && !isNaN(parseInt(timestamp))) ? new Date(parseInt(timestamp) * 1000) : null,
             conversionTime: new Date(),
             campaignSlug: slug,
             campaignName: name
