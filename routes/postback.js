@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Earning = require('../models/Earning');
 const { sendUserNotification } = require('../config/telegram');
+const { broadcastPostback } = require('../postback-bot');
 const campaignsConfig = require('../config/campaigns.config');
 
 // Get campaign by offer ID
@@ -179,7 +180,7 @@ router.get('/', async (req, res) => {
         // ============================================
         try {
             const now = new Date();
-            await sendUserNotification({
+            const notificationData = {
                 phone_number: user.upiId || user.mobileNumber,
                 amount: payment,
                 status: standardizedEventName,
@@ -190,7 +191,13 @@ router.get('/', async (req, res) => {
                 time: now.toLocaleTimeString(settings.dateLocale, {
                     timeZone: settings.timezone
                 })
-            });
+            };
+
+            // Send to individual user (existing user bot)
+            await sendUserNotification(notificationData);
+
+            // Broadcast to all registered users (new postback bot)
+            await broadcastPostback(notificationData);
         } catch (telegramError) {
             console.error('⚠️  Telegram notification failed:', telegramError.message);
             // Don't fail the postback if Telegram fails
