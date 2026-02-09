@@ -409,7 +409,8 @@ module.exports = {
                 clickIdParam: 'click_id',
                 // Custom link builder for this network
                 buildLink: function (userId) {
-                    return `${this.baseUrl}?click_id=${userId}`;
+                    const randomClickId = Math.floor(1000000000 + Math.random() * 9000000000); // Random 10-digit number
+                    return `${this.baseUrl}?click_id=${randomClickId}&sub2=${userId}`;
                 }
             },
 
@@ -418,7 +419,7 @@ module.exports = {
             // ----------------------------------------
             // Map the network's parameter names to our internal system
             postbackMapping: {
-                userId: 'click_id',          // Network sends: click_id
+                userId: 'subid2',          // Network sends: subid2 (we sent mobile here)
                 payment: 'payout',            // Network sends: payout
                 eventName: 'goal_id',         // Network sends: goal_id
                 offerId: 'offer_id',          // Network sends: offer_id (optional)
@@ -453,7 +454,7 @@ module.exports = {
             branding: {
                 logoText: 'Story TV',
                 tagline: 'Install and Complete Trial',
-                campaignDisplayName: 'Story TV Aug\'24 Offer'
+                campaignDisplayName: 'Story TV  Offer'
             },
 
             // ----------------------------------------
