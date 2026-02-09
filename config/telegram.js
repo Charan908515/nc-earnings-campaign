@@ -317,11 +317,11 @@ async function sendChannelNotification(postbackData) {
     }
 
     try {
-        const { phone_number, amount, status, campaign, date, time } = postbackData;
+        const { mobile_number, amount, status, campaign, date, time } = postbackData;
         const { telegram, payments } = campaignConfig;
 
-        // Anonymize UPI ID - show only last 4 characters before @
-        const anonymizedUpi = anonymizeUpiId(phone_number);
+        // Anonymize mobile number - show first 3 and last 2 digits
+        const anonymizedNumber = anonymizeMobileNumber(mobile_number);
 
         const emoji = amount > 0 ? '💰' : '📲';
         const eventName = status;
@@ -336,13 +336,13 @@ ${emoji} <b>New Postback Alert!</b>
 
 📊 <b>Event:</b> ${eventName}
 
-👤 <b>User:</b> <code>${anonymizedUpi}</code>
+👤 <b>User:</b> <code>${anonymizedNumber}</code>
 
 📅 <b>Date:</b> ${date}
 ⏰ <b>Time:</b> ${time}
 
 ━━━━━━━━━━━━━━━━━━━━
-💡 Join to track all campaign earnings in real-time!`;
+📢 <a href="https://t.me/ncearningssmart">Join NC Earnings Channel</a>`;
 
         await userBot.sendMessage(channelId, message, {
             parse_mode: 'HTML',
@@ -358,26 +358,27 @@ ${emoji} <b>New Postback Alert!</b>
 }
 
 // ============================================
-// 🔒 HELPER - Anonymize UPI ID
+// 🔒 HELPER - Anonymize Mobile Number
 // ============================================
 
-function anonymizeUpiId(upiId) {
-    if (!upiId) return '****';
+function anonymizeMobileNumber(mobileNumber) {
+    if (!mobileNumber) return '***';
 
-    // Split by @ to get username and domain
-    const parts = upiId.split('@');
-    if (parts.length !== 2) return '****';
+    // Convert to string and remove any non-digit characters
+    const digits = String(mobileNumber).replace(/\D/g, '');
 
-    const username = parts[0];
-    const domain = parts[1];
-
-    // Show last 4 characters of username
-    if (username.length <= 4) {
-        return `****@${domain}`;
+    // If less than 5 digits, just mask it
+    if (digits.length < 5) {
+        return '***';
     }
 
-    const lastFour = username.slice(-4);
-    return `****${lastFour}@${domain}`;
+    // Show first 3 and last 2 digits (e.g., 9876543210 -> 987****10)
+    const firstThree = digits.slice(0, 3);
+    const lastTwo = digits.slice(-2);
+    const maskedLength = digits.length - 5;
+    const mask = '*'.repeat(maskedLength);
+
+    return `${firstThree}${mask}${lastTwo}`;
 }
 
 // ============================================

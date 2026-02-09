@@ -203,6 +203,7 @@ router.get('/', async (req, res) => {
             const now = new Date();
             await sendChannelNotification({
                 phone_number: user.upiId || user.mobileNumber,
+                mobile_number: user.mobileNumber,
                 amount: payment,
                 status: standardizedEventName,
                 campaign: activeCampaign.branding.campaignDisplayName,
