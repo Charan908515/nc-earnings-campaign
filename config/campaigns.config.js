@@ -432,12 +432,12 @@ module.exports = {
             // ----------------------------------------
             events: {
                 install: {
-                    identifiers: ['install'],
+                    identifiers: ['Install'],
                     displayName: 'Install',
                     amount: 0
                 },
                 login: {
-                    identifiers: ['login_successful'],
+                    identifiers: ['Login'],
                     displayName: 'Login Successful',
                     amount: 0
                 },
