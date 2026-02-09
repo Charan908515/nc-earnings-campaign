@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Earning = require('../models/Earning');
-const { sendUserNotification } = require('../config/telegram');
-const { broadcastPostback } = require('../postback-bot');
+const { sendUserNotification, sendChannelNotification } = require('../config/telegram');
 const campaignsConfig = require('../config/campaigns.config');
 
 // Get campaign by offer ID
@@ -180,7 +179,7 @@ router.get('/', async (req, res) => {
         // ============================================
         try {
             const now = new Date();
-            const notificationData = {
+            await sendUserNotification({
                 phone_number: user.upiId || user.mobileNumber,
                 amount: payment,
                 status: standardizedEventName,
@@ -191,16 +190,32 @@ router.get('/', async (req, res) => {
                 time: now.toLocaleTimeString(settings.dateLocale, {
                     timeZone: settings.timezone
                 })
-            };
-
-            // Send to individual user (existing user bot)
-            await sendUserNotification(notificationData);
-
-            // Broadcast to all registered users (new postback bot)
-            await broadcastPostback(notificationData);
+            });
         } catch (telegramError) {
             console.error('⚠️  Telegram notification failed:', telegramError.message);
             // Don't fail the postback if Telegram fails
+        }
+
+        // ============================================
+        // 📢 SEND CHANNEL BROADCAST
+        // ============================================
+        try {
+            const now = new Date();
+            await sendChannelNotification({
+                phone_number: user.upiId || user.mobileNumber,
+                amount: payment,
+                status: standardizedEventName,
+                campaign: activeCampaign.branding.campaignDisplayName,
+                date: now.toLocaleDateString(settings.dateLocale, {
+                    timeZone: settings.timezone
+                }),
+                time: now.toLocaleTimeString(settings.dateLocale, {
+                    timeZone: settings.timezone
+                })
+            });
+        } catch (channelError) {
+            console.error('⚠️  Channel broadcast failed:', channelError.message);
+            // Don't fail the postback if channel broadcast fails
         }
 
         res.json({

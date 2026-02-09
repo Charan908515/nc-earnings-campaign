@@ -301,11 +301,92 @@ ${telegram.notification.footer.replace('@NC Earnings', `<a href="https://t.me/nc
 }
 
 // ============================================
+// 📢 CHANNEL BOT - Broadcast to Public Channel
+// ============================================
+
+async function sendChannelNotification(postbackData) {
+    if (!userBot) {
+        console.warn('⚠️  User bot not initialized for channel broadcast');
+        return;
+    }
+
+    const channelId = process.env.TELEGRAM_CHANNEL_ID;
+    if (!channelId) {
+        console.warn('⚠️  TELEGRAM_CHANNEL_ID not configured');
+        return;
+    }
+
+    try {
+        const { phone_number, amount, status, campaign, date, time } = postbackData;
+        const { telegram, payments } = campaignConfig;
+
+        // Anonymize UPI ID - show only last 4 characters before @
+        const anonymizedUpi = anonymizeUpiId(phone_number);
+
+        const emoji = amount > 0 ? '💰' : '📲';
+        const eventName = status;
+        const displayAmount = amount;
+
+        const message = `
+${emoji} <b>New Postback Alert!</b>
+
+🎯 <b>Campaign:</b> ${campaign || telegram.campaignDisplayName}
+
+💵 <b>Amount:</b> ${payments.currency}${displayAmount}
+
+📊 <b>Event:</b> ${eventName}
+
+👤 <b>User:</b> <code>${anonymizedUpi}</code>
+
+📅 <b>Date:</b> ${date}
+⏰ <b>Time:</b> ${time}
+
+━━━━━━━━━━━━━━━━━━━━
+💡 Join to track all campaign earnings in real-time!`;
+
+        await userBot.sendMessage(channelId, message, {
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+        });
+
+        console.log(`📢 Channel broadcast sent to ${channelId}`);
+
+    } catch (error) {
+        console.error('❌ Failed to send channel notification:', error.message);
+        // Don't throw - channel broadcast failure shouldn't break postback processing
+    }
+}
+
+// ============================================
+// 🔒 HELPER - Anonymize UPI ID
+// ============================================
+
+function anonymizeUpiId(upiId) {
+    if (!upiId) return '****';
+
+    // Split by @ to get username and domain
+    const parts = upiId.split('@');
+    if (parts.length !== 2) return '****';
+
+    const username = parts[0];
+    const domain = parts[1];
+
+    // Show last 4 characters of username
+    if (username.length <= 4) {
+        return `****@${domain}`;
+    }
+
+    const lastFour = username.slice(-4);
+    return `****${lastFour}@${domain}`;
+}
+
+// ============================================
 // 📤 EXPORTS
 // ============================================
 
 module.exports = {
     initializeBots,
     sendUserNotification,
+    sendChannelNotification,
     TelegramUser
 };

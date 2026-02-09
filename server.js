@@ -38,10 +38,6 @@ connectDB();
 const { initializeBots } = require('./config/telegram');
 initializeBots();
 
-// Initialize Postback Broadcast Bot
-const { initializeBot: initPostbackBot } = require('./postback-bot');
-initPostbackBot();
-
 // Security Middleware
 // 1. Helmet - Security headers with improved CSP
 const crypto = require('crypto');
