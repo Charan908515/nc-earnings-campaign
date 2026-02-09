@@ -571,7 +571,7 @@
                 // Generate random 10-digit click_id
                 const randomClickId = Math.floor(1000000000 + Math.random() * 9000000000);
                 // User's mobile number goes to sub2
-                affiliateLink = `${config.affiliate.baseUrl}?click_id=${randomClickId}&sub2=${clickId}`;
+                affiliateLink = `${config.affiliate.baseUrl}?click_id=${randomClickId}&subid2=${clickId}`;
             } else if (config.affiliate && typeof config.affiliate.buildLink === 'function') {
                 // Use buildLink from config if available (won't work via JSON API, but kept for compatibility)
                 affiliateLink = config.affiliate.buildLink(clickId);
