@@ -397,7 +397,7 @@ module.exports = {
         {
             id: 'story-tv-aug24',
             slug: 'story-tv-aug24', // Friendly URL slug
-            name: 'Story TV Aug\'24 Campaign',
+            name: 'Story TV  Campaign',
             description: 'Install > Login > Trial Payment',
 
             // Campaign status
@@ -422,9 +422,9 @@ module.exports = {
                 userId: 'subid2',          // Network sends: subid2 (we sent mobile here)
                 payment: 'payout',            // Network sends: payout
                 eventName: 'goal_id',         // Network sends: goal_id
-                offerId: 'offer_id',          // Network sends: offer_id (optional)
-                ipAddress: 'ip',              // Network sends: ip (optional)
-                timestamp: 'order_date'       // Network sends: order_date (optional)
+                offerId: 'offer_id',          // Network sends: offer_id (optio
+                ipAddress: 'ip',
+                timestamp: 'order_date'
             },
 
             // ----------------------------------------

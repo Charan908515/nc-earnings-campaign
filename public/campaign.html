@@ -12,7 +12,8 @@
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             width: 100%;
             height: 100%;
             overflow-x: hidden;
@@ -65,10 +66,13 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
                 opacity: 0.5;
             }
+
             50% {
                 transform: scale(1.1);
                 opacity: 0.8;
@@ -93,6 +97,7 @@
                 opacity: 0;
                 transform: translateY(40px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -287,6 +292,7 @@
                 opacity: 0;
                 transform: translateY(-10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -407,14 +413,8 @@
             <form id="campaignForm" novalidate>
                 <div class="form-group">
                     <label class="form-label" id="inputLabel" for="userInput">Your Mobile Number</label>
-                    <input 
-                        type="text" 
-                        id="userInput" 
-                        class="form-input" 
-                        placeholder="Enter details" 
-                        required
-                        autocomplete="tel"
-                    >
+                    <input type="text" id="userInput" class="form-input" placeholder="Enter details" required
+                        autocomplete="tel">
                 </div>
 
                 <button type="submit" class="btn btn-primary">
@@ -558,17 +558,31 @@
                 }
             }
 
-            // Use buildLink from config if available
+
+            // Generate affiliate link based on campaign configuration
             let affiliateLink;
-            if (config.affiliate && typeof config.affiliate.buildLink === 'function') {
+
+            // Get the campaign slug from URL
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const currentSlug = pathSegments[pathSegments.length - 1];
+
+            // Special handling for story-tv-aug24 campaign
+            if (currentSlug === 'story-tv-aug24') {
+                // Generate random 10-digit click_id
+                const randomClickId = Math.floor(1000000000 + Math.random() * 9000000000);
+                // User's mobile number goes to sub2
+                affiliateLink = `${config.affiliate.baseUrl}?click_id=${randomClickId}&sub2=${clickId}`;
+            } else if (config.affiliate && typeof config.affiliate.buildLink === 'function') {
+                // Use buildLink from config if available (won't work via JSON API, but kept for compatibility)
                 affiliateLink = config.affiliate.buildLink(clickId);
             } else {
-                // fallback to previous logic
+                // Fallback to previous logic for other campaigns
                 const clickIdParam = config.affiliate.clickIdParam || 'click_id';
                 const subAffiliateId = config.affiliate.subAffiliateId || '';
                 const subAffParam = subAffiliateId ? `&sub_aff_id=${subAffiliateId}` : '';
                 affiliateLink = `${config.affiliate.baseUrl}?o=${config.affiliate.offerId}&a=${config.affiliate.affiliateId}&${clickIdParam}=${clickId}${subAffParam}`;
             }
+
 
 
             setTimeout(() => {
