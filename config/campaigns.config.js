@@ -443,7 +443,7 @@ module.exports = {
                 trial: {
                     identifiers: ['trial_payment_successful'],
                     displayName: 'Trial Payment',
-                    amount: 0
+                    amount: 25
                 }
             },
 
