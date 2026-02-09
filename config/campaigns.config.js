@@ -436,11 +436,6 @@ module.exports = {
                     displayName: 'Install',
                     amount: 0
                 },
-                login: {
-                    identifiers: ['Login'],
-                    displayName: 'Login Successful',
-                    amount: 0
-                },
                 trial: {
                     identifiers: ['trial_payment_successful'],
                     displayName: 'Trial Payment',
