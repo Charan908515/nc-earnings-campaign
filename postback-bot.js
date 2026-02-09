@@ -200,10 +200,6 @@ ${emoji} <b>POSTBACK RECEIVED!</b>
 
 📊 <b>Event:</b> ${eventName}`;
 
-        // Only show cumulative for trial purchases (when amount > 0)
-        if (amount > 0) {
-            message += `\n💰 <b>User's Total Unpaid:</b> ₹${cumulativeEarnings}  \n \n`;
-        }
 
         message += `\n\n📅 <b>Date:</b> ${date}
 
@@ -214,6 +210,7 @@ ${emoji} <b>POSTBACK RECEIVED!</b>
         // Broadcast to all users
         let successCount = 0;
         let failCount = 0;
+        let chatNotFoundCount = 0;
 
         for (const user of users) {
             try {
@@ -223,12 +220,20 @@ ${emoji} <b>POSTBACK RECEIVED!</b>
                 });
                 successCount++;
             } catch (error) {
-                console.error(`❌ Failed to send to ${user.chat_id}:`, error.message);
-                failCount++;
+                // Silently skip "chat not found" errors (user hasn't started this bot)
+                if (error.message && error.message.includes('chat not found')) {
+                    chatNotFoundCount++;
+                } else {
+                    console.error(`❌ Failed to send to ${user.chat_id}:`, error.message);
+                    failCount++;
+                }
             }
         }
 
-        console.log(`📨 Broadcast sent: ${successCount} successful, ${failCount} failed (Total: ${users.length} users)`);
+        // Only log if there were actual sends or real errors (not just chat not found)
+        if (successCount > 0 || failCount > 0) {
+            console.log(`📨 Broadcast sent: ${successCount} successful, ${failCount} failed, ${chatNotFoundCount} not started bot (Total: ${users.length} users)`);
+        }
 
     } catch (error) {
         console.error('❌ Failed to broadcast postback:', error.message);
