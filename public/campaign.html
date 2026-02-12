@@ -559,35 +559,31 @@
             }
 
 
-            // Generate affiliate link based on campaign configuration
-            let affiliateLink;
+            // Generate affiliate link via API
+            try {
+                // Get the campaign slug from URL
+                const pathSegments = window.location.pathname.split('/').filter(Boolean);
+                const currentSlug = pathSegments[pathSegments.length - 1];
 
-            // Get the campaign slug from URL
-            const pathSegments = window.location.pathname.split('/').filter(Boolean);
-            const currentSlug = pathSegments[pathSegments.length - 1];
-
-            // Special handling for story-tv-aug24 campaign
-            if (currentSlug === 'story-tv-aug24') {
-                // Generate random 10-digit click_id
-                const randomClickId = Math.floor(1000000000 + Math.random() * 9000000000);
-                // User's mobile number goes to sub2
-                affiliateLink = `${config.affiliate.baseUrl}?click_id=${randomClickId}&subid2=${clickId}`;
-            } else if (config.affiliate && typeof config.affiliate.buildLink === 'function') {
-                // Use buildLink from config if available (won't work via JSON API, but kept for compatibility)
-                affiliateLink = config.affiliate.buildLink(clickId);
-            } else {
-                // Fallback to previous logic for other campaigns
-                const clickIdParam = config.affiliate.clickIdParam || 'click_id';
-                const subAffiliateId = config.affiliate.subAffiliateId || '';
-                const subAffParam = subAffiliateId ? `&sub_aff_id=${subAffiliateId}` : '';
-                affiliateLink = `${config.affiliate.baseUrl}?o=${config.affiliate.offerId}&a=${config.affiliate.affiliateId}&${clickIdParam}=${clickId}${subAffParam}`;
+                const response = await fetch(`/api/config/generate-link?slug=${currentSlug}&userId=${clickId}`);
+                const data = await response.json();
+                console.log(data);
+                if (data.success && data.link) {
+                    setTimeout(() => {
+                        window.location.href = data.link;
+                    }, 300);
+                } else {
+                    console.error('Link generation failed:', data);
+                    showAlert(data.error || 'Failed to generate link', 'error');
+                    submitButton.disabled = false;
+                    document.getElementById('submitButtonText').textContent = originalText;
+                }
+            } catch (error) {
+                console.error('Error fetching link:', error);
+                showAlert('Network error. Please try again.', 'error');
+                submitButton.disabled = false;
+                document.getElementById('submitButtonText').textContent = originalText;
             }
-
-
-
-            setTimeout(() => {
-                window.location.href = affiliateLink;
-            }, 300);
         });
 
         document.getElementById('userInput').addEventListener('focus', function () {

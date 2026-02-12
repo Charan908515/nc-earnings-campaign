@@ -62,4 +62,41 @@ router.get('/public', async (req, res) => {
     }
 });
 
+// Generate affiliate link securely using server-side logic
+router.get('/generate-link', (req, res) => {
+    try {
+        const { slug, userId } = req.query;
+
+        if (!slug || !userId) {
+            return res.status(400).json({ error: 'Missing slug or userId' });
+        }
+
+        const campaign = campaignConfig.getCampaignStrict(slug);
+
+        if (!campaign) {
+            return res.status(404).json({ error: 'Campaign not found' });
+        }
+
+        if (!campaign.isActive) {
+            return res.status(403).json({ error: 'Campaign is not active' });
+        }
+
+        // Use the campaign's buildLink function if it exists
+        if (campaign.affiliate && typeof campaign.affiliate.buildLink === 'function') {
+            const link = campaign.affiliate.buildLink(userId);
+            return res.json({ success: true, link });
+        } else {
+            // Fallback if no buildLink function is defined (should not happen for properly configured campaigns)
+            // But we can construct a basic one based on standard params if needed, or return error.
+            // For safety and strictness, let's return an error if buildLink is missing, encouraging proper config.
+            console.warn(`Campaign ${slug} missing buildLink function.`);
+            return res.status(500).json({ error: 'Link generation not configured for this campaign' });
+        }
+
+    } catch (error) {
+        console.error('Error generating link:', error);
+        res.status(500).json({ error: 'Failed to generate link' });
+    }
+});
+
 module.exports = router;
