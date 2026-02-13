@@ -326,7 +326,7 @@ module.exports = {
             // ----------------------------------------
             branding: {
                 logoText: 'Story Max',
-                tagline: 'Install and Purchase Trial get 15 rupees',
+                tagline: 'Install and Purchase Trial get 20 rupees',
                 campaignDisplayName: 'Story Max Offer'
             },
 
