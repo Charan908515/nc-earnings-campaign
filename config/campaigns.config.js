@@ -317,7 +317,7 @@ module.exports = {
                 trial: {
                     identifiers: ['Trial_purchased', 'trial_purchased'],
                     displayName: 'Trial Purchase',
-                    amount: 15
+                    amount: 20
                 }
             },
 
