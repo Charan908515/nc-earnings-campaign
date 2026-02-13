@@ -219,18 +219,7 @@ router.get('/', async (req, res) => {
             // Don't fail the postback if channel broadcast fails
         }
 
-        res.json({
-            success: true,
-            message: 'Postback processed successfully',
-            data: {
-                campaign: activeCampaign.name,
-                upiId: user.upiId,
-                mobileNumber: user.mobileNumber,
-                eventType: standardizedEventName,
-                payment,
-                newBalance: user.availableBalance
-            }
-        });
+        res.sendStatus(200);
     } catch (error) {
         console.error('❌ Postback processing error:', error);
         res.status(500).json({
