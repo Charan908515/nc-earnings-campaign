@@ -429,7 +429,7 @@ module.exports = {
                 install: {
                     identifiers: ['Default'],
                     displayName: 'Payment Tracked',
-                    amount: 2
+                    amount: 3
                 }
             },
 
