@@ -385,6 +385,123 @@ module.exports = {
                 currency: '₹',
                 minWithdrawal: 100
             }
+        },
+
+
+        {
+            id: 'waves',
+            slug: 'waves', // Friendly URL slug
+            name: 'Waves Campaign',
+            description: 'Welcome to Waves Campaign',
+
+            // Campaign status
+            isActive: true,
+
+            // ----------------------------------------
+            // 🔗 AFFILIATE LINK CONFIGURATION
+            // ----------------------------------------
+            affiliate: {
+                baseUrl: 'https://Cashpayout-ads.gotracking.in/click/',
+                offerId: 67,
+                affiliateId: 6,
+                clickIdParam: 'p1',
+                buildLink: function (userId) {
+                    return `${this.baseUrl}?pid=${this.offerId}&cid=${this.affiliateId}&p1=${userId}`;
+                }
+            },
+
+            // ----------------------------------------
+            // 📥 POSTBACK PARAMETER MAPPING
+            // ----------------------------------------
+            postbackMapping: {
+                userId: 'p1',          // Network sends: sub1
+                payment: 'payout',            // Network sends: payout
+                eventName: 'event_name',           // Network sends: event
+                offerId: 'offer_id',          // Network sends: offer_id (optional)
+                ipAddress: 'ip',              // Network sends: ip (optional)
+                timestamp: 'tdate'        // Network sends: tdate (optional)
+            },
+
+            // ----------------------------------------
+            // 💰 EVENT DEFINITIONS & PAYMENTS
+            // ----------------------------------------
+            events: {
+                install: {
+                    identifiers: ['Default'],
+                    displayName: 'Payment Tracked',
+                    amount: 2
+                }
+            },
+
+            // ----------------------------------------
+            // 🎨 BRANDING & UI
+            // ----------------------------------------
+            branding: {
+                logoText: 'Waves',
+                tagline: 'Welcome to Waves Campaign',
+                campaignDisplayName: 'Waves Offer'
+            },
+
+            // ----------------------------------------
+            // 📱 USER INPUT CONFIGURATION
+            // ----------------------------------------
+            userInput: {
+                fieldType: 'mobile',  // 'mobile' or 'upi'
+                extractMobileFromUPI: true,  // Extract mobile from UPI ID for click_id
+
+                mobile: {
+                    label: 'Your Mobile Number',
+                    placeholder: 'Enter 10-digit mobile number',
+                    maxLength: 10,
+                    pattern: '[0-9]{10}',
+                    errorMessage: 'Please enter a valid 10-digit mobile number'
+                },
+
+                upi: {
+                    label: 'Your UPI ID',
+                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+                    maxLength: 50,
+                    pattern: '[a-zA-Z0-9.\\-_]{2,}@[a-zA-Z]{2,}',
+                    errorMessage: 'Please enter a valid UPI ID'
+                }
+            },
+
+            // ----------------------------------------
+            // 📱 TELEGRAM SETTINGS
+            // ----------------------------------------
+            telegram: {
+                botUsername: 'ncearnings123bot',
+                welcomeMessage: {
+                    title: 'Welcome to Waves Campaign!',
+                    description: 'To register and get notifications:'
+                },
+                notification: {
+                    title: 'NEW CASHBACK RECEIVED!',
+                    showCumulativeEarnings: true,
+                    footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: 'Waves Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the Incred Gold offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
+                }
+            },
+
+            // ----------------------------------------
+            // ⚙️ ADDITIONAL SETTINGS
+            // ----------------------------------------
+            settings: {
+                enableDuplicateDetection: false,
+                verboseLogging: true,
+                timezone: 'Asia/Kolkata',
+                dateLocale: 'en-IN',
+                currency: '₹',
+                minWithdrawal: 100
+            }
         }
     ],
 
