@@ -312,7 +312,7 @@ module.exports = {
                 trial: {
                     identifiers: ['Trial_purchased', 'Gold_purchase'],
                     displayName: 'Trial Purchase',
-                    amount: 25
+                    amount: 13
                 }
             },
 
@@ -321,7 +321,7 @@ module.exports = {
             // ----------------------------------------
             branding: {
                 logoText: 'Incred Gold',
-                tagline: 'Install and Purchase Gold for 11 rupees and get 25 rupees',
+                tagline: 'Install and Purchase Gold for 11 rupees and get 13 rupees',
                 campaignDisplayName: 'Incred Gold Offer'
             },
 
