@@ -21,7 +21,7 @@ module.exports = {
         {
             id: 'story-max',
             slug: 'story-max', // Friendly URL slug
-            name: 'Story Max Campaign',
+            name: 'Story Max Campaign adzaffi',
             description: 'Install > Trial Purchase',
 
             // Campaign status
@@ -143,8 +143,8 @@ module.exports = {
 
         {
             id: 'story-tv-adzaffi',
-            slug: 'story-max-adzaffi', // Friendly URL slug
-            name: 'Story TV Campaign',
+            slug: 'story-tv-adzaffi', // Friendly URL slug
+            name: 'Story TV Campaign adzaffi',
             description: 'Install > Trial Purchase',
 
             // Campaign status
@@ -268,8 +268,8 @@ module.exports = {
 
         {
             id: 'incred-gold',
-            slug: 'incred-gold', // Friendly URL slug
-            name: 'Incred Gold Campaign',
+            slug: 'incred-gold-cashpayout',
+            name: 'Incred Gold Campaign cashout',
             description: 'Install > Gold Purchase',
 
             // Campaign status
@@ -390,8 +390,8 @@ module.exports = {
 
         {
             id: 'waves',
-            slug: 'waves', // Friendly URL slug
-            name: 'Waves Campaign',
+            slug: 'waves-cashpayout',
+            name: 'Waves Campaign cashout',
             description: 'Welcome to Waves Campaign',
 
             // Campaign status
@@ -502,7 +502,131 @@ module.exports = {
                 currency: '₹',
                 minWithdrawal: 100
             }
-        }
+        },
+
+
+        {
+            id: 'story-tv-visioncamp',
+            slug: 'story-max-visioncamp', // Friendly URL slug
+            name: 'Story TV Campaign visioncamp',
+            description: 'Install > Trial Purchase',
+
+            // Campaign status
+            isActive: true,
+
+            // ----------------------------------------
+            // 🔗 AFFILIATE LINK CONFIGURATION
+            // ----------------------------------------
+            affiliate: {
+                baseUrl: 'https://panel.visioncamp.in/go',
+                offerId: 145,
+                affiliateId: 919,
+                clickIdParam: 'sub1',
+                // Custom link builder for AdzAffi network
+                buildLink: function (userId) {
+                    return `${this.baseUrl}?cid=${this.offerId}&uid=${this.affiliateId}&sub1=${userId}`;
+                }
+            },
+
+            // ----------------------------------------
+            // 📥 POSTBACK PARAMETER MAPPING
+            // ----------------------------------------
+            // Map the network's parameter names to our internal system
+            postbackMapping: {
+                userId: 'sub1',          // Network sends: sub1
+                payment: 'payout',            // Network sends: payout
+                eventName: 'event',           // Network sends: event
+                offerId: 'offer_id',          // Network sends: offer_id (optional)
+                ipAddress: 'ip',              // Network sends: ip (optional)
+                timestamp: 'tdate'        // Network sends: tdate (optional)
+            },
+
+            // ----------------------------------------
+            // 💰 EVENT DEFINITIONS & PAYMENTS
+            // ----------------------------------------
+            events: {
+                install: {
+                    identifiers: ['install'],
+                    displayName: 'Install',
+                    amount: 0
+                },
+                trial: {
+                    identifiers: ['Trial_purchased', 'trial_purchased', "trial_buy"],
+                    displayName: 'Trial Purchase',
+                    amount: 25
+                }
+            },
+
+            // ----------------------------------------
+            // 🎨 BRANDING & UI
+            // ----------------------------------------
+            branding: {
+                logoText: 'Story TV',
+                tagline: 'Install and Purchase Trial get 25 rupees',
+                campaignDisplayName: 'Story TV Offer'
+            },
+
+            // ----------------------------------------
+            // 📱 USER INPUT CONFIGURATION
+            // ----------------------------------------
+            userInput: {
+                fieldType: 'mobile',  // 'mobile' or 'upi'
+                extractMobileFromUPI: true,  // Extract mobile from UPI ID for click_id
+
+                mobile: {
+                    label: 'Your Mobile Number',
+                    placeholder: 'Enter 10-digit mobile number',
+                    maxLength: 10,
+                    pattern: '[0-9]{10}',
+                    errorMessage: 'Please enter a valid 10-digit mobile number'
+                },
+
+                upi: {
+                    label: 'Your UPI ID',
+                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+                    maxLength: 50,
+                    pattern: '[a-zA-Z0-9.\\-_]{2,}@[a-zA-Z]{2,}',
+                    errorMessage: 'Please enter a valid UPI ID'
+                }
+            },
+
+            // ----------------------------------------
+            // 📱 TELEGRAM SETTINGS
+            // ----------------------------------------
+            telegram: {
+                botUsername: 'ncearnings123bot',
+                welcomeMessage: {
+                    title: 'Welcome to Story TV Campaign!',
+                    description: 'To register and get notifications:'
+                },
+                notification: {
+                    title: 'NEW CASHBACK RECEIVED!',
+                    showCumulativeEarnings: true,
+                    footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: 'Story TV Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the Story TV offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
+                }
+            },
+
+            // ----------------------------------------
+            // ⚙️ ADDITIONAL SETTINGS
+            // ----------------------------------------
+            settings: {
+                enableDuplicateDetection: false,
+                verboseLogging: true,
+                timezone: 'Asia/Kolkata',
+                dateLocale: 'en-IN',
+                currency: '₹',
+                minWithdrawal: 100
+            }
+        },
     ],
 
     // ============================================
