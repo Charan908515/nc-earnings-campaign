@@ -31,7 +31,7 @@ if (!activeCampaign) {
             installAmount: 0,
             trialAmount: 0,
             currency: '₹',
-            minWithdrawal: 100
+            minWithdrawal: 30
         },
         events: {},
         userInput: {

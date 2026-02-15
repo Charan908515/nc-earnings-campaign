@@ -137,7 +137,7 @@ module.exports = {
                 timezone: 'Asia/Kolkata',
                 dateLocale: 'en-IN',
                 currency: '₹',
-                minWithdrawal: 100
+                minWithdrawal: 30
             }
         },
 
@@ -258,7 +258,7 @@ module.exports = {
                 timezone: 'Asia/Kolkata',
                 dateLocale: 'en-IN',
                 currency: '₹',
-                minWithdrawal: 100
+                minWithdrawal: 30
             }
         },
 
@@ -375,7 +375,7 @@ module.exports = {
                 timezone: 'Asia/Kolkata',
                 dateLocale: 'en-IN',
                 currency: '₹',
-                minWithdrawal: 100
+                minWithdrawal: 30
             }
         },
 
@@ -499,7 +499,7 @@ module.exports = {
                 timezone: 'Asia/Kolkata',
                 dateLocale: 'en-IN',
                 currency: '₹',
-                minWithdrawal: 100
+                minWithdrawal: 30
             }
         },
     ],

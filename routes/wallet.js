@@ -93,15 +93,15 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
         }
 
         // SECURITY CHECK 4: Validate balance
-        if (user.availableBalance < 100) {
+        if (user.availableBalance < 30) {
             return res.status(400).json({
                 success: false,
-                message: 'Minimum withdrawal amount is ₹100'
+                message: 'Minimum withdrawal amount is ₹30'
             });
         }
 
         // SECURITY CHECK 5: Minimum withdrawal amount (redundant with check 4, but kept for clarity if logic changes)
-        const MIN_WITHDRAWAL = 100; // Minimum ₹100
+        const MIN_WITHDRAWAL = 30; // Minimum ₹30
         if (user.availableBalance < MIN_WITHDRAWAL) {
             return res.status(400).json({
                 success: false,

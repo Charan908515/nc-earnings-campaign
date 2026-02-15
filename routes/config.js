@@ -51,7 +51,7 @@ router.get('/public', async (req, res) => {
             payments: {
                 // Extract currency/minWithdrawal from settings if available
                 currency: activeCampaign.settings.currency || '₹',
-                minWithdrawal: activeCampaign.settings.minWithdrawal || 100
+                minWithdrawal: activeCampaign.settings.minWithdrawal || 30
             }
         };
 
