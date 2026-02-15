@@ -112,6 +112,10 @@ router.post('/withdrawals/:id/approve', adminMiddleware, async (req, res) => {
 
     console.log(`✅ Withdrawal approved: ₹${withdrawal.amount} to ${withdrawal.upiId} for ${withdrawal.mobileNumber}`);
 
+    // Get user's current balance for notification
+    const user = await User.findById(withdrawal.userId);
+    const currentBalance = user ? user.availableBalance : 0;
+
     // Send Telegram notification to user
     try {
       await sendWithdrawalApprovalNotification({
@@ -119,7 +123,7 @@ router.post('/withdrawals/:id/approve', adminMiddleware, async (req, res) => {
         upiId: withdrawal.upiId,
         amount: withdrawal.amount,
         processedAt: updateResult.processedAt,
-        closingBalance: 0
+        closingBalance: currentBalance
       });
     } catch (notifError) {
       console.error('Failed to send approval notification:', notifError.message);
