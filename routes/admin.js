@@ -7,6 +7,7 @@ const Earning = require('../models/Earning');
 const Withdrawal = require('../models/Withdrawal');
 const CampaignState = require('../models/CampaignState');
 const campaignsConfig = require('../config/campaigns.config');
+const { sendWithdrawalApprovalNotification, sendWithdrawalRejectionNotification } = require('../config/telegram');
 
 // Admin login endpoint
 router.post('/login', async (req, res) => {
@@ -111,6 +112,19 @@ router.post('/withdrawals/:id/approve', adminMiddleware, async (req, res) => {
 
     console.log(`✅ Withdrawal approved: ₹${withdrawal.amount} to ${withdrawal.upiId} for ${withdrawal.mobileNumber}`);
 
+    // Send Telegram notification to user
+    try {
+      await sendWithdrawalApprovalNotification({
+        userId: withdrawal.userId,
+        upiId: withdrawal.upiId,
+        amount: withdrawal.amount,
+        processedAt: updateResult.processedAt,
+        closingBalance: 0
+      });
+    } catch (notifError) {
+      console.error('Failed to send approval notification:', notifError.message);
+    }
+
     res.json({
       success: true,
       message: 'Withdrawal approved successfully',
@@ -181,6 +195,19 @@ router.post('/withdrawals/:id/reject', adminMiddleware, async (req, res) => {
     await user.save();
 
     console.log(`❌ Withdrawal rejected: ₹${withdrawal.amount} returned to ${withdrawal.mobileNumber}`);
+
+    // Send Telegram notification to user
+    try {
+      await sendWithdrawalRejectionNotification({
+        userId: withdrawal.userId,
+        upiId: withdrawal.upiId,
+        amount: withdrawal.amount,
+        processedAt: updateResult.processedAt,
+        newBalance: user.availableBalance
+      });
+    } catch (notifError) {
+      console.error('Failed to send rejection notification:', notifError.message);
+    }
 
     res.json({
       success: true,

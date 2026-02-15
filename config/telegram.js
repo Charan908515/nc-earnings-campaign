@@ -358,6 +358,140 @@ ${emoji} <b>New Postback Alert!</b>
 }
 
 // ============================================
+// 💰 WITHDRAWAL APPROVAL NOTIFICATION
+// ============================================
+
+async function sendWithdrawalApprovalNotification(withdrawalData) {
+    if (!userBot) {
+        console.warn('⚠️  User bot not initialized');
+        return;
+    }
+
+    try {
+        const { userId, upiId, amount, processedAt, closingBalance } = withdrawalData;
+
+        // Get the User model to find account owner's UPI ID
+        const User = mongoose.model('User');
+        const accountOwner = await User.findById(userId);
+
+        if (!accountOwner) {
+            console.log(`ℹ️  User account not found for userId: ${userId}`);
+            return;
+        }
+
+        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
+        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
+
+        if (!telegramUser) {
+            console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);
+            return;
+        }
+
+        if (!telegramUser.notifications_enabled) {
+            console.log(`🔕 Notifications disabled for: ${accountOwner.upiId}`);
+            return;
+        }
+
+        // Format the timestamp
+        const date = new Date(processedAt);
+        const formattedTime = date.toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        // Message shows the withdrawal destination UPI (where money will be sent)
+        const message = `✅ <b>Your Withdrawal Approved</b>
+
+💵 <b>Amount :</b> ₹${amount.toFixed(2)}
+
+📌 <b>UPI :</b> <code>${upiId}</code>
+
+💰 <b>Closing Balance :</b> ₹${closingBalance.toFixed(2)}
+
+🕒 <b>Time :</b> ${formattedTime}`;
+
+        // Send to account owner's Telegram chat
+        await userBot.sendMessage(telegramUser.chat_id, message, { parse_mode: 'HTML', disable_web_page_preview: true });
+        console.log(`📨 Withdrawal approval notification sent to account owner: ${accountOwner.upiId} (payment to: ${upiId})`);
+
+    } catch (error) {
+        console.error('❌ Failed to send withdrawal approval notification:', error.message);
+    }
+}
+
+// ============================================
+// ❌ WITHDRAWAL REJECTION NOTIFICATION
+// ============================================
+
+async function sendWithdrawalRejectionNotification(withdrawalData) {
+    if (!userBot) {
+        console.warn('⚠️  User bot not initialized');
+        return;
+    }
+
+    try {
+        const { userId, upiId, amount, processedAt, newBalance } = withdrawalData;
+
+        // Get the User model to find account owner's UPI ID
+        const User = mongoose.model('User');
+        const accountOwner = await User.findById(userId);
+
+        if (!accountOwner) {
+            console.log(`ℹ️  User account not found for userId: ${userId}`);
+            return;
+        }
+
+        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
+        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
+
+        if (!telegramUser) {
+            console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);
+            return;
+        }
+
+        if (!telegramUser.notifications_enabled) {
+            console.log(`🔕 Notifications disabled for: ${accountOwner.upiId}`);
+            return;
+        }
+
+        // Format the timestamp
+        const date = new Date(processedAt);
+        const formattedTime = date.toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        // Message shows the withdrawal destination UPI (where money would have been sent)
+        const message = `❌ <b>Your Withdrawal Rejected</b>
+
+💵 <b>Amount :</b> ₹${amount.toFixed(2)}
+
+📌 <b>UPI :</b> <code>${upiId}</code>
+
+💰 <b>Refunded Balance :</b> ₹${newBalance.toFixed(2)}
+
+🕒 <b>Time :</b> ${formattedTime}
+
+💡 <i>Your amount has been returned to your wallet.</i>`;
+
+        // Send to account owner's Telegram chat
+        await userBot.sendMessage(telegramUser.chat_id, message, { parse_mode: 'HTML', disable_web_page_preview: true });
+        console.log(`📨 Withdrawal rejection notification sent to account owner: ${accountOwner.upiId} (payment was for: ${upiId})`);
+
+    } catch (error) {
+        console.error('❌ Failed to send withdrawal rejection notification:', error.message);
+    }
+}
+
+// ============================================
 // 🔒 HELPER - Anonymize Mobile Number
 // ============================================
 
@@ -389,5 +523,7 @@ module.exports = {
     initializeBots,
     sendUserNotification,
     sendChannelNotification,
+    sendWithdrawalApprovalNotification,
+    sendWithdrawalRejectionNotification,
     TelegramUser
 };
