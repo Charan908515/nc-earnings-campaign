@@ -392,9 +392,10 @@ async function sendWithdrawalApprovalNotification(withdrawalData) {
             return;
         }
 
-        // Format the timestamp
+        // Format the timestamp in Asia/Kolkata timezone (GMT+5:30)
         const date = new Date(processedAt);
         const formattedTime = date.toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -458,9 +459,10 @@ async function sendWithdrawalRejectionNotification(withdrawalData) {
             return;
         }
 
-        // Format the timestamp
+        // Format the timestamp in Asia/Kolkata timezone (GMT+5:30)
         const date = new Date(processedAt);
         const formattedTime = date.toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
             day: '2-digit',
             month: 'short',
             year: 'numeric',
