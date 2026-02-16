@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /auth
+Allow: /wallet
+Allow: /campaign
+
+Disallow: /admin
+Disallow: /admin-dashboard
+Disallow: /admin_users
+Disallow: /api/
+
+Sitemap: https://www.nccampaigns.xyz/sitemap.xml
