@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
 
 // Validate required environment variables
@@ -127,6 +128,9 @@ if (process.env.NODE_ENV === 'production') {
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
+// 3.5 Cookie parser for authentication
+app.use(cookieParser());
+
 // 4. Sanitize data against NoSQL injection
 app.use(mongoSanitize());
 
@@ -144,9 +148,33 @@ if (process.env.NODE_ENV === 'production') {
 // Serve static files
 app.use(express.static('public'));
 
+// Authentication middleware
+const requireAuth = (req, res, next) => {
+    const token = req.cookies?.token;
+
+    if (!token) {
+        return res.redirect('/auth');
+    }
+
+    try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.clearCookie('token');
+        return res.redirect('/auth');
+    }
+};
+
 // Auth page route
 app.get('/auth', (req, res) => {
     res.sendFile(__dirname + '/public/auth.html');
+});
+
+// Wallet route (protected - requires authentication)
+app.get('/wallet', requireAuth, (req, res) => {
+    res.sendFile(__dirname + '/public/wallet.html');
 });
 
 // Import campaign config directly to validate slugs
