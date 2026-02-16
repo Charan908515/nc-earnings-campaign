@@ -290,7 +290,7 @@ ${emoji} <b>${telegram.notification.title}</b>
 
 ⏰ <b>Time:</b> ${time}
 
-${telegram.notification.footer.replace('@NC Earnings', `<a href="https://t.me/ncearningssmart">@NC Campaigns</a>`)}`;
+${telegram.notification.footer.replace('@NC Earnings', `<a href="https://t.me/nccampaigns">@NC Campaigns</a>`)}`;
 
         await userBot.sendMessage(user.chat_id, message, { parse_mode: 'HTML', disable_web_page_preview: true });
         console.log(`📨 User notification sent to ${phone_number} (Total unpaid: ${payments.currency}${cumulativeEarnings})`);
@@ -342,7 +342,7 @@ ${emoji} <b>New Postback Alert!</b>
 ⏰ <b>Time:</b> ${time}
 
 ━━━━━━━━━━━━━━━━━━━━
-📢 <a href="https://t.me/ncearningssmart">Join NC Earnings Channel</a>`;
+📢 <a href="https://t.me/nccampaigns">Join NC Earnings Channel</a>`;
 
         await userBot.sendMessage(channelId, message, {
             parse_mode: 'HTML',
