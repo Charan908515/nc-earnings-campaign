@@ -502,6 +502,130 @@ module.exports = {
                 minWithdrawal: 30
             }
         },
+
+
+        {
+            id: 'story-tv',
+            slug: 'story-tv-1', // Friendly URL slug
+            name: 'Story TV Campaign adzaffi',
+            description: 'Install > Trial Purchase',
+
+            // Campaign status
+            isActive: true,
+
+            // ----------------------------------------
+            // 🔗 AFFILIATE LINK CONFIGURATION
+            // ----------------------------------------
+            affiliate: {
+                baseUrl: 'https://adzaffi.com/click.php',
+                offerId: 14,
+                affiliateId: 7,
+                clickIdParam: 'sub1',
+                // Custom link builder for AdzAffi network
+                buildLink: function (userId) {
+                    return `${this.baseUrl}?o=${this.offerId}&a=${this.affiliateId}&sub1=${userId}`;
+                }
+            },
+
+            // ----------------------------------------
+            // 📥 POSTBACK PARAMETER MAPPING
+            // ----------------------------------------
+            // Map the network's parameter names to our internal system
+            postbackMapping: {
+                userId: 'sub1',          // Network sends: sub1
+                payment: 'payout',            // Network sends: payout
+                eventName: 'event',           // Network sends: event
+                offerId: 'offer_id',          // Network sends: offer_id (optional)
+                ipAddress: 'ip',              // Network sends: ip (optional)
+                timestamp: 'tdate'        // Network sends: tdate (optional)
+            },
+
+            // ----------------------------------------
+            // 💰 EVENT DEFINITIONS & PAYMENTS
+            // ----------------------------------------
+            events: {
+                install: {
+                    identifiers: ['Install'],
+                    displayName: 'Install',
+                    amount: 0
+                },
+                trial: {
+                    identifiers: ['Trial_purchased', 'trial_purchased'],
+                    displayName: 'Trial Purchase',
+                    amount: 25
+                }
+            },
+
+            // ----------------------------------------
+            // 🎨 BRANDING & UI
+            // ----------------------------------------
+            branding: {
+                logoText: 'Story TV',
+                tagline: 'Install and Purchase Trial get 25 rupees',
+                campaignDisplayName: 'Story TV Offer'
+            },
+
+            // ----------------------------------------
+            // 📱 USER INPUT CONFIGURATION
+            // ----------------------------------------
+            userInput: {
+                fieldType: 'mobile',  // 'mobile' or 'upi'
+                extractMobileFromUPI: true,  // Extract mobile from UPI ID for click_id
+
+                mobile: {
+                    label: 'Your Mobile Number',
+                    placeholder: 'Enter 10-digit mobile number',
+                    maxLength: 10,
+                    pattern: '[0-9]{10}',
+                    errorMessage: 'Please enter a valid 10-digit mobile number'
+                },
+
+                upi: {
+                    label: 'Your UPI ID',
+                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+                    maxLength: 50,
+                    pattern: '[a-zA-Z0-9.\\-_]{2,}@[a-zA-Z]{2,}',
+                    errorMessage: 'Please enter a valid UPI ID'
+                }
+            },
+
+            // ----------------------------------------
+            // 📱 TELEGRAM SETTINGS
+            // ----------------------------------------
+            telegram: {
+                botUsername: 'ncearnings123bot',
+                welcomeMessage: {
+                    title: 'Welcome to Story TV Campaign!',
+                    description: 'To register and get notifications:'
+                },
+                notification: {
+                    title: 'NEW CASHBACK RECEIVED!',
+                    showCumulativeEarnings: true,
+                    footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: 'Story TV Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the Story Max offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
+                }
+            },
+
+            // ----------------------------------------
+            // ⚙️ ADDITIONAL SETTINGS
+            // ----------------------------------------
+            settings: {
+                enableDuplicateDetection: false,
+                verboseLogging: true,
+                timezone: 'Asia/Kolkata',
+                dateLocale: 'en-IN',
+                currency: '₹',
+                minWithdrawal: 30
+            }
+        }
     ],
 
     // ============================================
