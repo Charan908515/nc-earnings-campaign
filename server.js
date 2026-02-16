@@ -81,7 +81,7 @@ app.use(helmet({
 
 // 2. CORS - Restrict origins
 const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? (process.env.ALLOWED_ORIGINS || 'https://nc-earnings-campaign-production.up.railway.app').split(',').map(o => o.trim()).filter(Boolean)
+    ? (process.env.ALLOWED_ORIGINS || 'https://nc-earnings-campaign-production.up.railway.app,https://www.nccampaigns.xyz').split(',').map(o => o.trim()).filter(Boolean)
     : ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
 app.use(cors({
