@@ -96,10 +96,17 @@ router.post('/register', async (req, res) => {
             { expiresIn: '15m' } // 15 minutes for better security
         );
 
+        // Set token as HTTP-only cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000 // 15 minutes in milliseconds
+        });
+
         res.status(201).json({
             success: true,
             message: 'Registration successful',
-            token,
             user: {
                 id: user._id,
                 upiId: user.upiId,
@@ -158,10 +165,17 @@ router.post('/login', async (req, res) => {
             { expiresIn: '15m' } // 15 minutes for better security
         );
 
+        // Set token as HTTP-only cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000 // 15 minutes in milliseconds
+        });
+
         res.json({
             success: true,
             message: 'Login successful',
-            token,
             user: {
                 id: user._id,
                 upiId: user.upiId,
@@ -176,6 +190,12 @@ router.post('/login', async (req, res) => {
         }
         res.status(500).json({ success: false, message: 'An error occurred' });
     }
+});
+
+// Logout user
+router.post('/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({ success: true, message: 'Logged out successfully' });
 });
 
 module.exports = router;

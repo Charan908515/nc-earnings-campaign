@@ -145,6 +145,15 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
+// Block direct access to protected HTML files
+app.use((req, res, next) => {
+    // Redirect wallet.html to /wallet route (which has auth protection)
+    if (req.path === '/wallet.html') {
+        return res.redirect('/wallet');
+    }
+    next();
+});
+
 // Serve static files
 app.use(express.static('public'));
 
