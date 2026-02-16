@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NC Earnings Campaign - Register & Earn</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <div class="auth-container">
+    <div class="auth-card fade-in">
+      <div class="auth-header">
+        <h1 class="logo">NC Earnings</h1>
+        <h2 class="auth-title" id="authTitle">Create Account</h2>
+        <p class="auth-subtitle" id="authSubtitle">Join and start earning today</p>
+      </div>
+
+      <div id="alertContainer"></div>
+
+      <!-- Registration Form -->
+      <form id="registerForm">
+        <div class="form-group">
+          <label class="form-label" for="regMobile">UPI ID</label>
+          <input type="text" id="regMobile" class="form-input" placeholder="Enter UPI ID (e.g., 9876543210@paytm)"
+            maxlength="50" pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regPassword">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="regPassword" class="form-input" placeholder="Create a strong password"
+              minlength="6" required>
+            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regConfirmPassword">Confirm Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="regConfirmPassword" class="form-input" placeholder="Re-enter your password"
+              minlength="6" required>
+            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
+          <span>Create Account</span>
+        </button>
+      </form>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="hidden">
+        <div class="form-group">
+          <label class="form-label" for="loginMobile">UPI ID</label>
+          <input type="text" id="loginMobile" class="form-input" placeholder="Enter your UPI ID" maxlength="50"
+            pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" required>
+            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+          <span>Login</span>
+        </button>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="toggleText">Already have an account?</span>
+        <a href="#" id="toggleLink">Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+</body>
+
+</html>

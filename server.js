@@ -123,6 +123,11 @@ if (process.env.NODE_ENV === 'production') {
 // Serve static files
 app.use(express.static('public'));
 
+// Auth page route
+app.get('/auth', (req, res) => {
+    res.sendFile(__dirname + '/public/auth.html');
+});
+
 // Import campaign config directly to validate slugs
 const campaignConfig = require('./config/campaigns.config');
 const CampaignState = require('./models/CampaignState'); // Import model

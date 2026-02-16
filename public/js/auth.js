@@ -11,25 +11,52 @@ const authTitle = document.getElementById('authTitle');
 const authSubtitle = document.getElementById('authSubtitle');
 const alertContainer = document.getElementById('alertContainer');
 
+// Check URL parameters for mode
+function initializeMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+
+    if (mode === 'login') {
+        isLoginMode = true;
+        switchToLoginMode();
+    } else if (mode === 'register') {
+        isLoginMode = false;
+        switchToRegisterMode();
+    }
+}
+
+// Switch to login mode
+function switchToLoginMode() {
+    registerForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+    authTitle.textContent = 'Welcome Back';
+    authSubtitle.textContent = 'Login to access your wallet';
+    toggleText.textContent = "Don't have an account?";
+    toggleLink.textContent = 'Register';
+}
+
+// Switch to register mode
+function switchToRegisterMode() {
+    loginForm.classList.add('hidden');
+    registerForm.classList.remove('hidden');
+    authTitle.textContent = 'Create Account';
+    authSubtitle.textContent = 'Join and start earning today';
+    toggleText.textContent = 'Already have an account?';
+    toggleLink.textContent = 'Login';
+}
+
+// Initialize mode on page load
+initializeMode();
+
 // Toggle between login and register
 toggleLink.addEventListener('click', (e) => {
     e.preventDefault();
     isLoginMode = !isLoginMode;
 
     if (isLoginMode) {
-        registerForm.classList.add('hidden');
-        loginForm.classList.remove('hidden');
-        authTitle.textContent = 'Welcome Back';
-        authSubtitle.textContent = 'Login to access your wallet';
-        toggleText.textContent = "Don't have an account?";
-        toggleLink.textContent = 'Register';
+        switchToLoginMode();
     } else {
-        loginForm.classList.add('hidden');
-        registerForm.classList.remove('hidden');
-        authTitle.textContent = 'Create Account';
-        authSubtitle.textContent = 'Join and start earning today';
-        toggleText.textContent = 'Already have an account?';
-        toggleLink.textContent = 'Login';
+        switchToRegisterMode();
     }
 });
 
