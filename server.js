@@ -54,13 +54,23 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: [
                 "'self'",
+                "'unsafe-inline'",  // Required for TailwindCSS CDN
                 "https://fonts.googleapis.com",
-                (req, res) => `'nonce-${res.locals.nonce}'`  // Allow nonce-based inline styles
+                "https://cdnjs.cloudflare.com",
+                "https://unpkg.com"
             ],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            fontSrc: [
+                "'self'",
+                "https://fonts.gstatic.com",
+                "https://cdnjs.cloudflare.com"
+            ],
             scriptSrc: [
                 "'self'",
-                (req, res) => `'nonce-${res.locals.nonce}'`  // Allow nonce-based inline scripts
+                "'unsafe-inline'",  // Required for TailwindCSS config
+                "https://cdn.tailwindcss.com",
+                "https://code.jquery.com",
+                "https://unpkg.com",
+                "https://cdnjs.cloudflare.com"
             ],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'"],
