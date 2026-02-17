@@ -1,11 +1,8 @@
 const API_URL = '/api';
 const AFFILIATE_BASE_URL = 'https://aff.pro-campaign.in/c?o=38&a=49&aff_click_id=';
 
-// Check authentication
-const token = localStorage.getItem('token');
-if (!token) {
-    window.location.href = '/';
-}
+// Authentication is now handled by HTTP-only cookies on the server
+// The server will redirect to /auth if not authenticated
 
 // DOM Elements
 const alertContainer = document.getElementById('alertContainer');
@@ -73,9 +70,7 @@ function formatDate(dateString) {
 async function loadBalance() {
     try {
         const response = await fetch(`${API_URL}/wallet/balance`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include' // Include cookies
         });
 
         const data = await response.json();
@@ -103,9 +98,7 @@ async function loadBalance() {
 async function loadEarningsHistory() {
     try {
         const response = await fetch(`${API_URL}/wallet/history`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include' // Include cookies
         });
 
         const data = await response.json();
@@ -143,9 +136,7 @@ async function loadEarningsHistory() {
 async function loadWithdrawalHistory() {
     try {
         const response = await fetch(`${API_URL}/wallet/withdrawals`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include' // Include cookies
         });
 
         const data = await response.json();
@@ -234,9 +225,9 @@ withdrawForm.addEventListener('submit', async (e) => {
         const response = await fetch(`${API_URL}/wallet/withdraw`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
+            credentials: 'include', // Include cookies
             body: JSON.stringify({ upiId })
         });
 
