@@ -270,7 +270,7 @@ withdrawForm.addEventListener('submit', async (e) => {
 logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/';
+    window.location.href = '/auth';
 });
 
 // Initialize
