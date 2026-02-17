@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = (req, res, next) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Get token from cookie instead of Authorization header
+    const token = req.cookies?.token;
 
     if (!token) {
         return res.status(401).json({ success: false, message: 'No token, authorization denied' });
@@ -12,12 +13,14 @@ const authMiddleware = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
+        res.clearCookie('token');
         res.status(401).json({ success: false, message: 'Token is not valid' });
     }
 };
 
 const adminMiddleware = (req, res, next) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Get token from cookie instead of Authorization header
+    const token = req.cookies?.token;
 
     if (!token) {
         return res.status(401).json({ success: false, message: 'No token provided' });
@@ -34,6 +37,7 @@ const adminMiddleware = (req, res, next) => {
         req.admin = decoded;
         next();
     } catch (error) {
+        res.clearCookie('token');
         res.status(401).json({ success: false, message: 'Invalid or expired token' });
     }
 };
