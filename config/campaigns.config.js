@@ -666,7 +666,7 @@ module.exports = {
             // ----------------------------------------
             events: {
                 install: {
-                    identifiers: ['Intial'],
+                    identifiers: ['Initial'],
                     displayName: 'Install Tracked',
                     amount: 0
                 },
