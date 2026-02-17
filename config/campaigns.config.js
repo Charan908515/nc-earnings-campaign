@@ -682,7 +682,7 @@ module.exports = {
             // ----------------------------------------
             branding: {
                 logoText: 'STORY TV',
-                tagline: 'Welcome to STORY TV Campaign',
+                tagline: 'Install and Purchase Trial get 25 rupees',
                 campaignDisplayName: 'STORY TV Offer'
             },
 
