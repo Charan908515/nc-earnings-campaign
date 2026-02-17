@@ -23,9 +23,16 @@ router.post('/login', async (req, res) => {
         { expiresIn: '2h' } // Short expiration for admin sessions
       );
 
+      // Set token as HTTP-only cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 2 * 60 * 60 * 1000 // 2 hours in milliseconds
+      });
+
       res.json({
         success: true,
-        token,
         message: 'Admin login successful'
       });
     } else {

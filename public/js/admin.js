@@ -1,8 +1,5 @@
 const API_URL = '/api';
 
-// Admin JWT token
-let adminToken = '';
-
 // DOM Elements
 const loginSection = document.getElementById('loginSection');
 const dashboardSection = document.getElementById('dashboardSection');
@@ -171,6 +168,7 @@ adminLoginForm.addEventListener('submit', async (e) => {
         const response = await fetch(`${API_URL}/admin/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Include cookies
             body: JSON.stringify({ username, password })
         });
 
@@ -181,10 +179,8 @@ adminLoginForm.addEventListener('submit', async (e) => {
             return;
         }
 
-        if (data.success && data.token) {
-            adminToken = data.token;
-            sessionStorage.setItem('adminToken', data.token);
-
+        if (data.success) {
+            // Cookie is set automatically by the server
             // UI Update
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('adminLayout').classList.remove('hidden');
@@ -199,9 +195,16 @@ adminLoginForm.addEventListener('submit', async (e) => {
 });
 
 // Logout
-logoutBtn.addEventListener('click', () => {
-    adminToken = '';
-    sessionStorage.removeItem('adminToken');
+logoutBtn.addEventListener('click', async () => {
+    // Call logout endpoint to clear cookie
+    try {
+        await fetch(`${API_URL}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch (e) {
+        console.error('Logout error:', e);
+    }
 
     // Toggle Views
     document.getElementById('loginSection').classList.remove('hidden');
@@ -215,22 +218,10 @@ logoutBtn.addEventListener('click', () => {
 // HELPER: FETCH WITH AUTH
 // ---------------------------------------------
 async function fetchAuth(endpoint, options = {}) {
-    if (!options.headers) options.headers = {};
-    // Check if token exists from session if variable is empty
-    if (!adminToken) adminToken = sessionStorage.getItem('adminToken');
-
-    options.headers['Authorization'] = `Bearer ${adminToken}`;
-
-    // Fallback for older explicit username/password sending (if middleware supports it, otherwise rely on JWT)
-    // The previous code used username/password in headers, but the router uses jwt.verify OR middleware. 
-    // The previous router code snippet showed: router.get('/withdrawals', adminMiddleware... 
-    // And adminMiddleware usually checks Authorization header. 
-    // BUT the previous admin.js was sending 'username' and 'password' headers explicitly. 
-    // Let's assume the server has been updated to use JWT as per the login endpoint generation.
-    // If the server strictly requires username/password headers because middleware is old-school, we might need to persist credentials.
-    // However, step 178 showed `adminMiddleware` is imported. Let's assume standard Bearer token logic or keep legacy headers if needed.
-    // Looking at step 178 imports: `const { adminMiddleware } = require('../middleware/auth');`
-    // And login generates a token. So Bearer token is correct.
+    // Cookies are sent automatically, no need to set Authorization header
+    if (!options.credentials) {
+        options.credentials = 'include';
+    }
 
     const res = await fetch(`${API_URL}/admin${endpoint}`, options);
     if (res.status === 401 || res.status === 403) {
@@ -577,10 +568,4 @@ setInterval(() => {
     }
 }, 30000);
 
-// Check session on load
-if (sessionStorage.getItem('adminToken')) {
-    adminToken = sessionStorage.getItem('adminToken');
-    document.getElementById('loginSection').classList.add('hidden');
-    document.getElementById('adminLayout').classList.remove('hidden');
-    showSection('dashboard');
-}
+// No session check needed - server will redirect if not authenticated
