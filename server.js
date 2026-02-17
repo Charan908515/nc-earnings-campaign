@@ -146,10 +146,19 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Block direct access to protected HTML files
+// Block direct access to protected HTML files and redirect to clean routes
 app.use((req, res, next) => {
-    // Redirect wallet.html to /wallet route (which has auth protection)
+    // Redirect wallet.html to /wallet
     if (req.path === '/wallet.html') {
         return res.redirect('/wallet');
+    }
+    // Redirect auth.html to /auth
+    if (req.path === '/auth.html') {
+        return res.redirect('/auth');
+    }
+    // Redirect admin.html and admin-dashboard.html to /admin
+    if (req.path === '/admin.html' || req.path === '/admin-dashboard.html' || req.path === '/dashboard.html') {
+        return res.redirect('/admin');
     }
     next();
 });
@@ -179,6 +188,11 @@ const requireAuth = (req, res, next) => {
 // Auth page route
 app.get('/auth', (req, res) => {
     res.sendFile(__dirname + '/public/auth.html');
+});
+
+// Admin page route
+app.get('/admin', (req, res) => {
+    res.sendFile(__dirname + '/public/admin.html');
 });
 
 // Wallet route (protected - requires authentication)

@@ -1,12 +1,10 @@
 const API_URL = '/api';
 
-// Admin JWT token
-let adminToken = sessionStorage.getItem('adminToken') || '';
-
 // Check if token exists, redirect to login if not
-if (!adminToken) {
-    window.location.href = '/admin.html';
-}
+// Server handles this but keeping client check for immediate feedback
+// if (!document.cookie.includes('token')) {
+//    window.location.href = '/admin';
+// }
 
 // Sidebar state
 let isSidebarCollapsed = false;
@@ -22,19 +20,16 @@ let refreshInterval = null;
 
 // Helper function to make authenticated API calls
 async function fetchWithAuth(url, options = {}) {
-    const headers = {
-        'Authorization': `Bearer ${adminToken}`,
-        'Content-Type': 'application/json',
-        ...options.headers
-    };
+    if (!options.credentials) {
+        options.credentials = 'include';
+    }
 
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, options);
 
     if (response.status === 401) {
         showAlert('Session expired. Please log in again.', 'error');
-        sessionStorage.removeItem('adminToken');
         setTimeout(() => {
-            window.location.href = '/admin.html';
+            window.location.href = '/admin';
         }, 1500);
         throw new Error('Unauthorized');
     }

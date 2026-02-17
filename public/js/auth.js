@@ -110,17 +110,17 @@ registerForm.addEventListener('submit', async (e) => {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include', // Include cookies
             body: JSON.stringify({ upiId, password })
         });
 
         const data = await response.json();
 
         if (data.success) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            // Cookie set automatically by server
             showAlert('Registration successful! Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = '/wallet.html';
+                window.location.href = '/wallet';
             }, 1500);
         } else {
             showAlert(data.message || 'Registration failed');
@@ -158,17 +158,17 @@ loginForm.addEventListener('submit', async (e) => {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include', // Include cookies
             body: JSON.stringify({ upiId, password })
         });
 
         const data = await response.json();
 
         if (data.success) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            // Cookie set automatically by server
             showAlert('Login successful! Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = '/wallet.html';
+                window.location.href = '/wallet';
             }, 1500);
         } else {
             showAlert(data.message || 'Login failed');
