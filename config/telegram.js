@@ -112,6 +112,12 @@ Or manually register:
                 // Register user
                 const upiId = verification.upiId;
 
+                // Handle Account Switching: Remove this UPI from any OTHER chat IDs
+                await TelegramUser.deleteMany({
+                    phone_number: upiId,
+                    chat_id: { $ne: chatId.toString() }
+                });
+
                 let user = await TelegramUser.findOne({ chat_id: chatId.toString() });
 
                 if (user) {
@@ -151,6 +157,12 @@ Your UPI ID: <code>${upiId}</code>
         // SCENARIO 3: Input is a UPI ID (Manual Registration - Backward Compatibility)
         if (/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(input)) {
             try {
+                // Handle Account Switching: Remove this UPI from any OTHER chat IDs
+                await TelegramUser.deleteMany({
+                    phone_number: input,
+                    chat_id: { $ne: chatId.toString() }
+                });
+
                 let user = await TelegramUser.findOne({ chat_id: chatId.toString() });
 
                 if (user) {
