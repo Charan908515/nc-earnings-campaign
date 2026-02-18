@@ -245,8 +245,10 @@ async function sendUserNotification(postbackData) {
         const { phone_number, amount, status, campaign, click_id, date, time } = postbackData;
         const { telegram, payments } = campaignConfig;
 
-        // Find user by UPI ID (stored in phone_number field)
-        const user = await TelegramUser.findOne({ phone_number: phone_number });
+        // Find user by UPI ID (stored in phone_number field) - Case Insensitive
+        const user = await TelegramUser.findOne({
+            phone_number: { $regex: new RegExp(`^${phone_number}$`, 'i') }
+        });
 
         if (!user) {
             console.log(`ℹ️  No Telegram user registered for identifier: ${phone_number}`);
@@ -379,8 +381,10 @@ async function sendWithdrawalApprovalNotification(withdrawalData) {
             return;
         }
 
-        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
-        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
+        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI) - Case Insensitive
+        const telegramUser = await TelegramUser.findOne({
+            phone_number: { $regex: new RegExp(`^${accountOwner.upiId}$`, 'i') }
+        });
 
         if (!telegramUser) {
             console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);
@@ -446,8 +450,10 @@ async function sendWithdrawalRejectionNotification(withdrawalData) {
             return;
         }
 
-        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
-        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
+        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI) - Case Insensitive
+        const telegramUser = await TelegramUser.findOne({
+            phone_number: { $regex: new RegExp(`^${accountOwner.upiId}$`, 'i') }
+        });
 
         if (!telegramUser) {
             console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);

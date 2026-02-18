@@ -80,10 +80,14 @@ async function loadBalance() {
             availableBalanceEl.textContent = data.data.availableBalance;
             withdrawAmountEl.value = `₹${data.data.availableBalance}`;
 
-            // Update Telegram bot instruction with user's UPI ID
-            const userMobileForBot = document.getElementById('userMobileForBot');
-            if (userMobileForBot) {
-                userMobileForBot.textContent = data.data.upiId || data.data.mobileNumber;
+            // Update Telegram bot button with user's UPI ID
+            const telegramBotBtn = document.getElementById('telegramBotBtn');
+            const userIdentifier = data.data.upiId || data.data.mobileNumber;
+
+            if (telegramBotBtn && userIdentifier) {
+                // Encode the identifier for the URL
+                const encodedIdentifier = encodeURIComponent(userIdentifier);
+                telegramBotBtn.href = `https://t.me/ncearnings123bot?start=${encodedIdentifier}`;
             }
         } else {
             showAlert('Failed to load balance');
