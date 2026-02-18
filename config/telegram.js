@@ -15,6 +15,7 @@ const USER_BOT_TOKEN = process.env.TELEGRAM_USER_BOT_TOKEN;
 // ============================================
 
 const TelegramUser = require('../models/TelegramUser');
+const TelegramVerification = require('../models/TelegramVerification');
 
 // ============================================
 // 🤖 BOT INITIALIZATION
@@ -70,23 +71,24 @@ function initializeBots() {
 function setupUserBotCommands() {
     const { campaign, telegram } = campaignConfig;
 
-    // /start command - Register UPI ID
+    // /start command - Register UPI ID or Verify Token
     userBot.onText(/\/start(.*)/, async (msg, match) => {
         const chatId = msg.chat.id;
-        const upiInput = match[1]?.trim();
+        const input = match[1]?.trim();
 
-        if (!upiInput) {
+        // SCENARIO 1: No input - Show instructions
+        if (!input) {
             await userBot.sendMessage(
                 chatId,
                 `👋 <b>${telegram.welcomeMessage.title}</b>
 
 ${telegram.welcomeMessage.description}
 
-📝 <b>Command:</b>
-<code>/start YOUR_UPI_ID</code>
+📝 <b>To get started:</b>
+Please go to your wallet dashboard and click "🤖 Bot Notifications" to automatically register.
 
-<b>Example:</b>
-<code>/start 9876543210@paytm</code>
+Or manually register:
+<code>/start YOUR_UPI_ID</code>
 
 ✅ Once registered, you'll receive instant notifications for ALL campaigns when your postbacks arrive!
 
@@ -96,74 +98,117 @@ ${telegram.welcomeMessage.description}
             return;
         }
 
-        // Validate UPI ID format
-        if (!/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(upiInput)) {
-            await userBot.sendMessage(
-                chatId,
-                '❌ Invalid UPI ID format. Please enter a valid UPI ID.\n\nExample: <code>/start 9876543210@paytm</code>',
-                { parse_mode: 'HTML', disable_web_page_preview: true }
-            );
-            return;
-        }
+        // SCENARIO 2: Input is a UUID (Token Verification)
+        // UUID regex (approximate)
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input)) {
+            try {
+                const verification = await TelegramVerification.findOne({ token: input });
 
-        try {
-            let user = await TelegramUser.findOne({ chat_id: chatId.toString() });
+                if (!verification) {
+                    await userBot.sendMessage(chatId, '❌ Invalid or expired verification link. Please generate a new one from your wallet.');
+                    return;
+                }
 
-            if (user) {
-                if (user.phone_number !== upiInput) {
-                    user.phone_number = upiInput;  // Store UPI ID in phone_number field
-                    user.registered_at = new Date();
+                // Register user
+                const upiId = verification.upiId;
+
+                let user = await TelegramUser.findOne({ chat_id: chatId.toString() });
+
+                if (user) {
+                    user.phone_number = upiId;
                     user.notifications_enabled = true;
                     await user.save();
-                    await userBot.sendMessage(
-                        chatId,
-                        `✅ <b>UPI ID Updated!</b>
-
-Your new UPI ID: <code>${upiInput}</code>
-
-🔔 Notifications: <b>ENABLED</b>
-
-📱 You'll receive alerts for ALL campaigns when postbacks arrive!`,
-                        { parse_mode: 'HTML', disable_web_page_preview: true }
-                    );
                 } else {
-                    await userBot.sendMessage(
-                        chatId,
-                        `ℹ️ You're already registered with UPI ID: <code>${upiInput}</code>
-
-🔔 Notifications: <b>${user.notifications_enabled ? 'ENABLED' : 'DISABLED'}</b>
-
-📱 You'll receive alerts for ALL campaigns!`,
-                        { parse_mode: 'HTML', disable_web_page_preview: true }
-                    );
+                    user = await TelegramUser.create({
+                        chat_id: chatId.toString(),
+                        phone_number: upiId,
+                        notifications_enabled: true
+                    });
                 }
-            } else {
-                user = await TelegramUser.create({
-                    chat_id: chatId.toString(),
-                    phone_number: upiInput,  // Store UPI ID in phone_number field
-                    notifications_enabled: true
-                });
+
+                // Delete used token
+                await TelegramVerification.deleteOne({ _id: verification._id });
 
                 await userBot.sendMessage(
                     chatId,
                     `🎉 <b>Registration Successful!</b>
 
-Your UPI ID: <code>${upiInput}</code>
+Your UPI ID: <code>${upiId}</code>
 
 ✅ You'll now receive notifications for ALL campaigns!
-
-🔕 Use /stop to disable notifications
-📖 Use /help for more commands`,
+`,
                     { parse_mode: 'HTML', disable_web_page_preview: true }
                 );
+                return;
+
+            } catch (error) {
+                console.error('Token verification error:', error);
+                await userBot.sendMessage(chatId, '❌ An error occurred during verification.');
+                return;
             }
-        } catch (error) {
-            console.error('❌ Registration error:', error);
-            await userBot.sendMessage(
-                chatId,
-                '❌ Registration failed. Please try again later.'
-            );
         }
+
+        // SCENARIO 3: Input is a UPI ID (Manual Registration - Backward Compatibility)
+        if (/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(input)) {
+            try {
+                let user = await TelegramUser.findOne({ chat_id: chatId.toString() });
+
+                if (user) {
+                    if (user.phone_number !== input) {
+                        user.phone_number = input;
+                        user.registered_at = new Date();
+                        user.notifications_enabled = true;
+                        await user.save();
+                        await userBot.sendMessage(
+                            chatId,
+                            `✅ <b>UPI ID Updated!</b>
+
+Your new UPI ID: <code>${input}</code>
+
+🔔 Notifications: <b>ENABLED</b>`,
+                            { parse_mode: 'HTML', disable_web_page_preview: true }
+                        );
+                    } else {
+                        await userBot.sendMessage(
+                            chatId,
+                            `ℹ️ You're already registered with UPI ID: <code>${input}</code>`,
+                            { parse_mode: 'HTML', disable_web_page_preview: true }
+                        );
+                    }
+                } else {
+                    user = await TelegramUser.create({
+                        chat_id: chatId.toString(),
+                        phone_number: input,
+                        notifications_enabled: true
+                    });
+
+                    await userBot.sendMessage(
+                        chatId,
+                        `🎉 <b>Registration Successful!</b>
+
+Your UPI ID: <code>${input}</code>
+
+✅ You'll verify receive notifications for ALL campaigns!`,
+                        { parse_mode: 'HTML', disable_web_page_preview: true }
+                    );
+                }
+            } catch (error) {
+                console.error('❌ Registration error:', error);
+                await userBot.sendMessage(
+                    chatId,
+                    '❌ Registration failed. Please try again later.'
+                );
+            }
+            return;
+        }
+
+        // SCENARIO 4: Invalid Input
+        await userBot.sendMessage(
+            chatId,
+            '❌ Invalid format. Please use the link from your wallet or enter a valid UPI ID.\n\nExample: <code>/start 9876543210@paytm</code>',
+            { parse_mode: 'HTML', disable_web_page_preview: true }
+        );
+
     });
 
     // /stop command - Disable notifications
@@ -245,10 +290,8 @@ async function sendUserNotification(postbackData) {
         const { phone_number, amount, status, campaign, click_id, date, time } = postbackData;
         const { telegram, payments } = campaignConfig;
 
-        // Find user by UPI ID (stored in phone_number field) - Case Insensitive
-        const user = await TelegramUser.findOne({
-            phone_number: { $regex: new RegExp(`^${phone_number}$`, 'i') }
-        });
+        // Find user by UPI ID (stored in phone_number field)
+        const user = await TelegramUser.findOne({ phone_number: phone_number });
 
         if (!user) {
             console.log(`ℹ️  No Telegram user registered for identifier: ${phone_number}`);
@@ -381,10 +424,8 @@ async function sendWithdrawalApprovalNotification(withdrawalData) {
             return;
         }
 
-        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI) - Case Insensitive
-        const telegramUser = await TelegramUser.findOne({
-            phone_number: { $regex: new RegExp(`^${accountOwner.upiId}$`, 'i') }
-        });
+        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
+        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
 
         if (!telegramUser) {
             console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);
@@ -450,10 +491,8 @@ async function sendWithdrawalRejectionNotification(withdrawalData) {
             return;
         }
 
-        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI) - Case Insensitive
-        const telegramUser = await TelegramUser.findOne({
-            phone_number: { $regex: new RegExp(`^${accountOwner.upiId}$`, 'i') }
-        });
+        // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
+        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
 
         if (!telegramUser) {
             console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);

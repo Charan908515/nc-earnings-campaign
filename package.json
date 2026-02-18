@@ -29,7 +29,8 @@
         "jsonwebtoken": "^9.0.0",
         "mongoose": "^7.0.0",
         "morgan": "^1.10.1",
-        "node-telegram-bot-api": "^0.61.0"
+        "node-telegram-bot-api": "^0.61.0",
+        "uuid": "^13.0.0"
     },
     "devDependencies": {
         "nodemon": "^2.0.22"

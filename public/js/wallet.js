@@ -80,14 +80,10 @@ async function loadBalance() {
             availableBalanceEl.textContent = data.data.availableBalance;
             withdrawAmountEl.value = `₹${data.data.availableBalance}`;
 
-            // Update Telegram bot button with user's UPI ID
-            const telegramBotBtn = document.getElementById('telegramBotBtn');
-            const userIdentifier = data.data.upiId || data.data.mobileNumber;
-
-            if (telegramBotBtn && userIdentifier) {
-                // Encode the identifier for the URL
-                const encodedIdentifier = encodeURIComponent(userIdentifier);
-                telegramBotBtn.href = `https://t.me/ncearnings123bot?start=${encodedIdentifier}`;
+            // Update Telegram bot instruction with user's UPI ID
+            const userMobileForBot = document.getElementById('userMobileForBot');
+            if (userMobileForBot) {
+                userMobileForBot.textContent = data.data.upiId || data.data.mobileNumber;
             }
         } else {
             showAlert('Failed to load balance');
@@ -202,6 +198,45 @@ if (cancelWithdrawBtn) {
     cancelWithdrawBtn.addEventListener('click', () => {
         withdrawSection.classList.add('hidden');
         showWithdrawBtn.classList.remove('hidden');
+    });
+}
+
+// Bot Notification Button Handler
+const botNotificationBtn = document.getElementById('botNotificationBtn');
+if (botNotificationBtn) {
+    botNotificationBtn.addEventListener('click', async () => {
+        // Disable button and show loading state
+        botNotificationBtn.disabled = true;
+        const originalText = botNotificationBtn.innerHTML;
+        botNotificationBtn.innerHTML = '⏳ Loading...';
+
+        try {
+            const response = await fetch(`${API_URL}/wallet/link-telegram`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.telegramLink) {
+                // Redirect to Telegram
+                window.open(data.telegramLink, '_blank');
+            } else {
+                showAlert(data.message || 'Failed to generate Telegram link');
+            }
+        } catch (error) {
+            console.error('Bot link error:', error);
+            showAlert('Network error. Please try again.');
+        } finally {
+            // Restore button state
+            setTimeout(() => {
+                botNotificationBtn.disabled = false;
+                botNotificationBtn.innerHTML = originalText;
+            }, 2000);
+        }
     });
 }
 

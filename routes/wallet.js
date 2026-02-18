@@ -4,6 +4,39 @@ const { authMiddleware } = require('../middleware/auth');
 const User = require('../models/User');
 const Earning = require('../models/Earning');
 const Withdrawal = require('../models/Withdrawal');
+const TelegramVerification = require('../models/TelegramVerification');
+const { v4: uuidv4 } = require('uuid');
+
+// Generate Telegram Link
+router.post('/link-telegram', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const upiId = user.upiId || user.mobileNumber; // Use UPI ID or Mobile Number as identifier
+        const token = uuidv4();
+
+        // Store token in DB
+        await TelegramVerification.create({
+            token,
+            upiId
+        });
+
+        const botUsername = 'ncearnings123bot'; // Replace with your actual bot username if different
+        const telegramLink = `https://t.me/${botUsername}?start=${token}`;
+
+        res.json({
+            success: true,
+            telegramLink
+        });
+
+    } catch (error) {
+        console.error('Telegram link generation error:', error);
+        res.status(500).json({ success: false, message: 'Failed to generate Telegram link' });
+    }
+});
 
 // Get user balance
 router.get('/balance', authMiddleware, async (req, res) => {
