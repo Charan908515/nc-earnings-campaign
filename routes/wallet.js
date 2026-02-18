@@ -29,7 +29,9 @@ router.post('/link-telegram', authMiddleware, async (req, res) => {
 
         res.json({
             success: true,
-            telegramLink
+            telegramLink,
+            token,
+            botUsername
         });
 
     } catch (error) {

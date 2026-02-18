@@ -224,6 +224,16 @@ if (botNotificationBtn) {
             if (data.success && data.telegramLink) {
                 // Redirect to Telegram
                 window.open(data.telegramLink, '_blank');
+
+                // Fallback instructions in case deep link fails
+                setTimeout(() => {
+                    const command = `/start ${data.token}`;
+                    prompt(
+                        "If the Telegram app didn't open correctly, copy and send this command to the bot manually:",
+                        command
+                    );
+                }, 1000);
+
             } else {
                 showAlert(data.message || 'Failed to generate Telegram link');
             }
