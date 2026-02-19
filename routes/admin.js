@@ -240,8 +240,38 @@ router.post('/withdrawals/:id/reject', adminMiddleware, async (req, res) => {
 // Get platform statistics
 router.get('/stats', adminMiddleware, async (req, res) => {
   try {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    // Helper to get start of day in IST (UTC+5:30)
+    const getISTStartOfDay = (date = new Date()) => {
+      // Create a date object for the current time
+      const now = new Date(date);
+
+      // Convert to IST time string
+      const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+      const istDate = new Date(istString);
+
+      // Set to midnight
+      istDate.setHours(0, 0, 0, 0);
+
+      // We now have "00:00 IST" as a Date object in the *server's* timezone context 
+      // (which is confusing), OR we can just act on the timestamp.
+      // A more robust way without locale string parsing (which can vary):
+
+      // 1. Get UTC timestamp
+      const utcTs = now.getTime() + (now.getTimezoneOffset() * 60000);
+
+      // 2. Add IST offset (+5.5h) to get "IST Time" in linear ms
+      const istOffsetMs = 5.5 * 60 * 60 * 1000;
+      const istLinear = utcTs + istOffsetMs;
+
+      // 3. Create date from this linear time to extract day boundaries
+      const istPseudoDate = new Date(istLinear);
+      istPseudoDate.setHours(0, 0, 0, 0); // Floor to midnight
+
+      // 4. Subtract offset to get back to the true UTC timestamp of "IST Midnight"
+      return new Date(istPseudoDate.getTime() - istOffsetMs);
+    };
+
+    const todayStart = getISTStartOfDay();
 
     const yesterdayStart = new Date(todayStart);
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
@@ -249,9 +279,11 @@ router.get('/stats', adminMiddleware, async (req, res) => {
     const yesterdayEnd = new Date(todayStart);
     yesterdayEnd.setMilliseconds(-1);
 
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
+    // Month Start in IST
+    const monthStartPseudo = new Date(new Date().getTime() + (new Date().getTimezoneOffset() * 60000) + (5.5 * 3600000));
+    monthStartPseudo.setDate(1);
+    monthStartPseudo.setHours(0, 0, 0, 0);
+    const monthStart = new Date(monthStartPseudo.getTime() - (5.5 * 3600000));
 
     // Helper for aggregations
     const getStats = async (startDate, endDate) => {
