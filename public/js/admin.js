@@ -56,19 +56,18 @@ function formatDate(dateString) {
 // NAVIGATION & INIT
 // ---------------------------------------------
 
-// Sidebar Toggle
-const sidebarToggle = document.getElementById('sidebarToggle');
-const sidebar = document.getElementById('sidebar');
+// ---------------------------------------------
+// NAVIGATION & INIT
+// ---------------------------------------------
 
-if (sidebarToggle && sidebar) {
-    sidebarToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-    });
-}
+// Sidebar Toggle - DEPRECATED
+// const sidebarToggle = document.getElementById('sidebarToggle');
+// const sidebar = document.getElementById('sidebar');
 
-// Navigation Item Clicks
-document.querySelectorAll('.sidebar-nav-item').forEach(item => {
-    item.addEventListener('click', () => {
+// Navigation Item Clicks (Bottom Nav)
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent default anchor jump
         const section = item.getAttribute('data-section');
         showSection(section);
     });
@@ -78,14 +77,12 @@ function showSection(sectionId) {
     // 1. Hide all content sections
     document.querySelectorAll('.section-content').forEach(el => {
         el.classList.remove('active');
-        // If your CSS uses 'hidden' class alongside 'active', ensure consistency.
-        // The example CSS uses 'display: none' for .section-content and 'display: block' for .active
-        // So we just toggle 'active'.
     });
 
     // 2. Deactivate all nav items
-    document.querySelectorAll('.sidebar-nav-item').forEach(el => {
+    document.querySelectorAll('.nav-item').forEach(el => {
         el.classList.remove('active');
+        // Reset icon color if needed, but CSS handles .active class
     });
 
     // 3. Show target section
@@ -95,8 +92,7 @@ function showSection(sectionId) {
     }
 
     // 4. Activate nav item
-    // Find item with data-section=sectionId
-    const targetNav = document.querySelector(`.sidebar-nav-item[data-section="${sectionId}"]`);
+    const targetNav = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
     if (targetNav) {
         targetNav.classList.add('active');
     }
@@ -109,10 +105,8 @@ function showSection(sectionId) {
     if (sectionId === 'campaigns') loadCampaigns();
     if (sectionId === 'logs') loadLogs();
 
-    // Mobile: Close sidebar after selection
-    if (window.innerWidth < 769 && sidebar) {
-        sidebar.classList.remove('open');
-    }
+    // Scroll to top
+    window.scrollTo(0, 0);
 }
 
 // Event Delegation for User Management Buttons
@@ -270,17 +264,21 @@ function displayWithdrawals(withdrawals) {
 
     // Pending Table
     if (pending.length === 0) {
-        pendingWithdrawalsTable.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No pending withdrawal requests</td></tr>`;
+        pendingWithdrawalsTable.innerHTML = `<tr><td colspan="3" class="text-center text-muted p-4">No pending withdrawal requests</td></tr>`;
     } else {
         pendingWithdrawalsTable.innerHTML = pending.map(w => `
-      <tr>
-        <td>${w.mobileNumber}</td>
-        <td>₹${w.amount}</td>
-        <td>${w.upiId}</td>
-        <td>${formatDate(w.requestedAt)}</td>
-        <td>
-          <button class="btn btn-success approve-withdrawal-btn" data-withdrawal-id="${w._id}" style="margin-right:8px;padding:6px 12px;font-size:13px;">Approve</button>
-          <button class="btn btn-danger reject-withdrawal-btn" data-withdrawal-id="${w._id}" style="padding:6px 12px;font-size:13px;">Reject</button>
+      <tr class="border-b border-gray-100 dark:border-gray-700">
+        <td class="p-4">
+            <div class="font-bold text-gray-800 dark:text-gray-200">${w.mobileNumber}</div>
+            <div class="text-xs text-gray-500">${w.upiId}</div>
+            <div class="text-xs text-gray-400 mt-1">${formatDate(w.requestedAt)}</div>
+        </td>
+        <td class="p-4 font-bold text-gray-800 dark:text-gray-200">₹${w.amount}</td>
+        <td class="p-4">
+          <div class="flex gap-2">
+              <button class="btn btn-success approve-withdrawal-btn px-3 py-1 text-xs" data-withdrawal-id="${w._id}">Approve</button>
+              <button class="btn btn-danger reject-withdrawal-btn px-3 py-1 text-xs" data-withdrawal-id="${w._id}">Reject</button>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -288,20 +286,23 @@ function displayWithdrawals(withdrawals) {
 
     // All Table (Limit to last 50 for performance or logic)
     if (withdrawals.length === 0) {
-        allWithdrawalsTable.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No requests yet</td></tr>`;
+        allWithdrawalsTable.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-4">No requests yet</td></tr>`;
     } else {
         allWithdrawalsTable.innerHTML = withdrawals.slice(0, 50).map(w => {
-            let badge = w.status === 'pending' ? '<span class="badge badge-warning">Pending</span>' :
-                w.status === 'completed' ? '<span class="badge badge-success">Completed</span>' :
-                    '<span class="badge badge-danger">Rejected</span>';
+            let badgeClass = w.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                w.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    'bg-red-100 text-red-800';
+
             return `
-        <tr>
-          <td>${w.mobileNumber}</td>
-          <td>₹${w.amount}</td>
-          <td>${w.upiId}</td>
-          <td>${badge}</td>
-          <td>${formatDate(w.requestedAt)}</td>
-          <td>${formatDate(w.processedAt)}</td>
+        <tr class="border-b border-gray-100 dark:border-gray-700">
+          <td class="p-4 text-xs text-gray-500">${formatDate(w.requestedAt)}</td>
+          <td class="p-4">
+            <div class="font-medium text-gray-800 dark:text-gray-200">${w.mobileNumber}</div>
+          </td>
+          <td class="p-4 font-bold">₹${w.amount}</td>
+          <td class="p-4">
+              <span class="px-2 py-1 rounded-full text-xs font-bold ${badgeClass}">${w.status.toUpperCase()}</span>
+          </td>
         </tr>
       `;
         }).join('');
@@ -315,18 +316,16 @@ function renderStatsRow(period, postbackData, earningsData) {
     const breakdown = postbackData.breakdown || {};
     const breakdownHtml = Object.entries(breakdown).length > 0
         ? Object.entries(breakdown).map(([type, count]) =>
-            `<div style="display: inline-block; margin-right: 15px; font-size: 14px; color: #555;">
-                <span style="font-weight: 600; color: #333;">${type}:</span> ${count}
-             </div>`
+            `<span class="mr-2 text-xs"><span class="font-semibold">${type}:</span> ${count}</span>`
         ).join('')
-        : '<span class="text-muted">-</span>';
+        : '<span class="text-gray-400">-</span>';
 
     return `
-        <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 15px; font-weight: 600;">${period}</td>
-            <td style="padding: 15px; text-align: center; font-size: 16px; font-weight: 700;">${postbackData.count}</td>
-            <td style="padding: 15px;">${breakdownHtml}</td>
-            <td style="padding: 15px; text-align: right; font-weight: 700; color: #10B981;">₹${earningsData}</td>
+        <tr class="border-b border-gray-100 dark:border-gray-700">
+            <td class="p-4 font-semibold text-gray-700 dark:text-gray-300">${period}</td>
+            <td class="p-4 text-center font-bold text-lg">${postbackData.count}</td>
+            <td class="p-4 text-sm text-gray-600 dark:text-gray-400">${breakdownHtml}</td>
+            <td class="p-4 text-right font-bold text-green-600">₹${earningsData}</td>
         </tr>
     `;
 }
@@ -349,7 +348,7 @@ async function fetchStats() {
         }
     } catch (e) {
         console.error(e);
-        if (statsTableBody) statsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error loading stats</td></tr>`;
+        if (statsTableBody) statsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger p-4">Error loading stats</td></tr>`;
     }
 }
 
@@ -387,7 +386,7 @@ async function loadUsers() {
         }
     } catch (error) {
         console.error('Load users error:', error);
-        document.getElementById('usersTable').innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error loading users</td></tr>`;
+        document.getElementById('usersTable').innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-4">Error loading users</td></tr>`;
     }
 }
 
@@ -396,31 +395,30 @@ function renderUsers(users) {
     if (!tbody) return;
 
     if (users.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center">No users found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4">No users found</td></tr>`;
         return;
     }
 
     tbody.innerHTML = users.map(user => `
-        <tr>
-            <td>
-                <div style="font-weight:600;">${user.mobileNumber || '-'}</div>
-                <div style="font-size:12px;color:#666;">${user.upiId}</div>
+        <tr class="border-b border-gray-100 dark:border-gray-700">
+            <td class="p-4">
+                <div class="font-semibold text-gray-800 dark:text-white">${user.mobileNumber || '-'}</div>
+                <div class="text-xs text-gray-500">${user.upiId}</div>
             </td>
-            <td>₹${user.availableBalance}</td>
-            <td>₹${user.totalEarnings}</td>
-            <td>
-                <span class="badge ${user.isSuspended ? 'badge-danger' : 'badge-success'}">
+            <td class="p-4 font-medium">₹${user.availableBalance}</td>
+            <td class="p-4">
+                <span class="px-2 py-1 text-xs rounded-full font-bold ${user.isSuspended ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
                     ${user.isSuspended ? 'SUSPENDED' : 'ACTIVE'}
                 </span>
             </td>
-            <td>
-                <div style="display: flex; gap: 5px;">
+            <td class="p-4">
+                <div class="flex flex-wrap gap-2">
                     ${user.isSuspended
-            ? `<button class="btn btn-success user-toggle-btn" data-user-id="${user._id}" data-action="unsuspend" style="padding:6px 12px;font-size:12px;">Activate</button>`
-            : `<button class="btn btn-danger user-toggle-btn" data-user-id="${user._id}" data-action="suspend" style="padding:6px 12px;font-size:12px;">Suspend</button>`
+            ? `<button class="btn user-toggle-btn bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}" data-action="unsuspend">Activate</button>`
+            : `<button class="btn user-toggle-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}" data-action="suspend">Suspend</button>`
         }
-                    <button class="btn btn-info edit-balance-btn" data-user-id="${user._id}" data-balance="${user.availableBalance}" style="padding:6px 12px;font-size:12px;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer;">Edit Bal</button>
-                    <button class="btn btn-danger delete-user-btn" data-user-id="${user._id}" style="padding:6px 12px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;">Delete</button>
+                    <button class="btn edit-balance-btn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}" data-balance="${user.availableBalance}">Edit Bal</button>
+                    <button class="btn delete-user-btn bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}">Delete</button>
                 </div>
             </td>
         </tr>
@@ -483,14 +481,14 @@ document.addEventListener('click', (e) => {
 function openEditBalanceModal(userId, currentBalance) {
     currentUserToEdit = userId;
     newBalanceInput.value = currentBalance;
+    // Updated for Tailwind hidden class
     editBalanceModal.classList.remove('hidden');
-    editBalanceModal.style.display = 'flex';
 }
 
 function closeEditBalanceModal() {
     currentUserToEdit = null;
+    // Updated for Tailwind hidden class
     editBalanceModal.classList.add('hidden');
-    editBalanceModal.style.display = 'none';
 }
 
 async function saveUserBalance(btn) {
