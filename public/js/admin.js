@@ -22,7 +22,7 @@ const pendingAmountEl = document.getElementById('pendingAmount');
 // Table elements
 const pendingWithdrawalsTable = document.getElementById('pendingWithdrawalsTable');
 const allWithdrawalsTable = document.getElementById('allWithdrawalsTable');
-const recentEarningsTable = document.getElementById('recentEarningsTable');
+// const recentEarningsTable = document.getElementById('recentEarningsTable'); // Removed
 const campaignsTable = document.getElementById('campaignsTable');
 
 // Show alert
@@ -308,6 +308,29 @@ function displayWithdrawals(withdrawals) {
     }
 }
 
+// Stats elements - NEW
+const statsTableBody = document.getElementById('statsTableBody');
+
+function renderStatsRow(period, postbackData, earningsData) {
+    const breakdown = postbackData.breakdown || {};
+    const breakdownHtml = Object.entries(breakdown).length > 0
+        ? Object.entries(breakdown).map(([type, count]) =>
+            `<div style="display: inline-block; margin-right: 15px; font-size: 14px; color: #555;">
+                <span style="font-weight: 600; color: #333;">${type}:</span> ${count}
+             </div>`
+        ).join('')
+        : '<span class="text-muted">-</span>';
+
+    return `
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 15px; font-weight: 600;">${period}</td>
+            <td style="padding: 15px; text-align: center; font-size: 16px; font-weight: 700;">${postbackData.count}</td>
+            <td style="padding: 15px;">${breakdownHtml}</td>
+            <td style="padding: 15px; text-align: right; font-weight: 700; color: #10B981;">₹${earningsData}</td>
+        </tr>
+    `;
+}
+
 async function fetchStats() {
     try {
         const response = await fetchAuth('/stats');
@@ -315,24 +338,18 @@ async function fetchStats() {
         if (data.success) {
             totalUsersEl.textContent = data.data.totalUsers;
             totalEarningsEl.textContent = data.data.totalEarnings;
-            displayRecentEarnings(data.data.recentEarnings || []);
-        }
-    } catch (e) { console.error(e); }
-}
 
-function displayRecentEarnings(earnings) {
-    if (earnings.length === 0) {
-        recentEarningsTable.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No earnings yet</td></tr>`;
-    } else {
-        recentEarningsTable.innerHTML = earnings.map(e => `
-      <tr>
-        <td>${e.mobileNumber}</td>
-        <td><span class="badge badge-primary">${e.eventType}</span></td>
-        <td>₹${e.payment}</td>
-        <td>${e.ipAddress || '-'}</td>
-        <td>${formatDate(e.createdAt)}</td>
-      </tr>
-    `).join('');
+            if (statsTableBody) {
+                statsTableBody.innerHTML = [
+                    renderStatsRow('Today', data.data.postbacks.today, data.data.earnings.today),
+                    renderStatsRow('Yesterday', data.data.postbacks.yesterday, data.data.earnings.yesterday),
+                    renderStatsRow('This Month', data.data.postbacks.month, data.data.earnings.month)
+                ].join('');
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        if (statsTableBody) statsTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error loading stats</td></tr>`;
     }
 }
 

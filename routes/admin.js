@@ -240,30 +240,87 @@ router.post('/withdrawals/:id/reject', adminMiddleware, async (req, res) => {
 // Get platform statistics
 router.get('/stats', adminMiddleware, async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalEarnings = await Earning.aggregate([
-      { $group: { _id: null, total: { $sum: '$payment' } } }
-    ]);
-    const pendingWithdrawals = await Withdrawal.countDocuments({ status: 'pending' });
-    const totalWithdrawalAmount = await Withdrawal.aggregate([
-      { $match: { status: 'pending' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
-    // Get recent earnings
-    const recentEarnings = await Earning.find()
-      .populate('userId', 'mobileNumber')
-      .sort({ createdAt: -1 })
-      .limit(50);
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+    const yesterdayEnd = new Date(todayStart);
+    yesterdayEnd.setMilliseconds(-1);
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    // Helper for aggregations
+    const getStats = async (startDate, endDate) => {
+      const matchStage = { createdAt: { $gte: startDate } };
+      if (endDate) matchStage.createdAt.$lte = endDate;
+
+      const stats = await Earning.aggregate([
+        { $match: matchStage },
+        {
+          $group: {
+            _id: '$eventType',
+            count: { $sum: 1 },
+            total: { $sum: '$payment' }
+          }
+        }
+      ]);
+
+      // Calculate totals and format breakdown
+      const result = {
+        count: 0,
+        total: 0,
+        breakdown: {}
+      };
+
+      stats.forEach(s => {
+        result.count += s.count;
+        result.total += s.total;
+        const type = s._id || 'Unknown';
+        result.breakdown[type] = s.count;
+      });
+
+      return result;
+    };
+
+    const [
+      totalUsers,
+      totalEarningsResult,
+      pendingWithdrawals,
+      totalWithdrawalResult,
+      statsToday,
+      statsYesterday,
+      statsMonth
+    ] = await Promise.all([
+      User.countDocuments(),
+      Earning.aggregate([{ $group: { _id: null, total: { $sum: '$payment' } } }]),
+      Withdrawal.countDocuments({ status: 'pending' }),
+      Withdrawal.aggregate([{ $match: { status: 'pending' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+      getStats(todayStart),
+      getStats(yesterdayStart, yesterdayEnd),
+      getStats(monthStart)
+    ]);
 
     res.json({
       success: true,
       data: {
         totalUsers,
-        totalEarnings: totalEarnings[0]?.total || 0,
+        totalEarnings: totalEarningsResult[0]?.total || 0,
         pendingWithdrawals,
-        totalWithdrawalAmount: totalWithdrawalAmount[0]?.total || 0,
-        recentEarnings
+        totalWithdrawalAmount: totalWithdrawalResult[0]?.total || 0,
+        postbacks: {
+          today: { count: statsToday.count, breakdown: statsToday.breakdown },
+          yesterday: { count: statsYesterday.count, breakdown: statsYesterday.breakdown },
+          month: { count: statsMonth.count, breakdown: statsMonth.breakdown }
+        },
+        earnings: {
+          today: statsToday.total,
+          yesterday: statsYesterday.total,
+          month: statsMonth.total
+        }
       }
     });
   } catch (error) {
