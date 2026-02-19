@@ -57,7 +57,8 @@ router.get('/balance', authMiddleware, async (req, res) => {
                 totalEarnings: user.totalEarnings,
                 availableBalance: user.availableBalance,
                 mobileNumber: user.mobileNumber,
-                upiId: user.upiId
+                upiId: user.upiId,
+                name: user.name
             }
         });
     } catch (error) {
@@ -223,6 +224,70 @@ router.get('/withdrawals', authMiddleware, async (req, res) => {
         if (process.env.NODE_ENV !== 'production') {
             console.error('Withdrawal history error:', error);
         }
+        res.status(500).json({ success: false, message: 'An error occurred' });
+    }
+});
+
+// Update profile (Name)
+router.post('/update-profile', authMiddleware, async (req, res) => {
+    try {
+        const { name } = req.body;
+
+        if (!name || name.trim().length === 0) {
+            return res.status(400).json({ success: false, message: 'Name cannot be empty' });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user.userId,
+            { name: name.trim() },
+            { new: true }
+        );
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: {
+                name: user.name
+            }
+        });
+    } catch (error) {
+        console.error('Profile update error:', error);
+        res.status(500).json({ success: false, message: 'An error occurred' });
+    }
+});
+
+// Change Password
+router.post('/change-password', authMiddleware, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Please provide both current and new passwords' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+        }
+
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Verify current password
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Incorrect current password' });
+        }
+
+        // Update password
+        user.password = newPassword;
+        await user.save();
+
+        res.json({ success: true, message: 'Password updated successfully' });
+
+    } catch (error) {
+        console.error('Password change error:', error);
         res.status(500).json({ success: false, message: 'An error occurred' });
     }
 });

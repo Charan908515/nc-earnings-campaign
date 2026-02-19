@@ -74,7 +74,8 @@ router.post('/register', async (req, res) => {
         const user = new User({
             upiId: upiId,           // Primary identifier
             mobileNumber: mobileNumber || upiId,  // For affiliate links or fallback
-            password
+            password,
+            name: req.body.name || 'user' // Default to 'user' if not provided
         });
         await user.save();
 
@@ -83,17 +84,18 @@ router.post('/register', async (req, res) => {
         console.log('✅ NEW USER REGISTERED');
         console.log('='.repeat(60));
         console.log('🆔 MongoDB ID:', user._id);
+        console.log('👤 Name:', user.name);
         console.log('💳 UPI ID:', user.upiId);
         console.log('📱 Mobile Number:', user.mobileNumber);
         console.log('💰 Initial Balance:', user.availableBalance);
         console.log('📅 Registration Time:', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
         console.log('='.repeat(60) + '\n');
 
-        // Generate JWT token with shorter expiration
+        // Generate JWT token with longer expiration
         const token = jwt.sign(
             { userId: user._id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '15m' } // 15 minutes for better security
+            { expiresIn: '24h' } // 24 hours
         );
 
         // Set token as HTTP-only cookie
@@ -101,7 +103,7 @@ router.post('/register', async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // HTTPS only in production
             sameSite: 'strict',
-            maxAge: 15 * 60 * 1000 // 15 minutes in milliseconds
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
         });
 
         res.status(201).json({
@@ -109,6 +111,7 @@ router.post('/register', async (req, res) => {
             message: 'Registration successful',
             user: {
                 id: user._id,
+                name: user.name,
                 upiId: user.upiId,
                 mobileNumber: user.mobileNumber,
                 totalEarnings: user.totalEarnings,
@@ -158,11 +161,11 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
-        // Generate JWT token with shorter expiration
+        // Generate JWT token with longer expiration
         const token = jwt.sign(
             { userId: user._id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '15m' } // 15 minutes for better security
+            { expiresIn: '24h' } // 24 hours
         );
 
         // Set token as HTTP-only cookie
@@ -170,7 +173,7 @@ router.post('/login', async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // HTTPS only in production
             sameSite: 'strict',
-            maxAge: 15 * 60 * 1000 // 15 minutes in milliseconds
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
         });
 
         res.json({

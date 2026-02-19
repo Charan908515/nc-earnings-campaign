@@ -81,6 +81,13 @@ registerForm.addEventListener('submit', async (e) => {
     const upiId = document.getElementById('regMobile').value;
     const password = document.getElementById('regPassword').value;
     const confirmPassword = document.getElementById('regConfirmPassword').value;
+    const name = document.getElementById('regName').value;
+
+    // Validate Name
+    if (!name || name.trim().length === 0) {
+        showAlert('Please enter your name');
+        return;
+    }
 
     // Validate UPI ID format
     if (!/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
@@ -111,7 +118,7 @@ registerForm.addEventListener('submit', async (e) => {
                 'Content-Type': 'application/json'
             },
             credentials: 'include', // Include cookies
-            body: JSON.stringify({ upiId, password })
+            body: JSON.stringify({ upiId, password, name })
         });
 
         const data = await response.json();

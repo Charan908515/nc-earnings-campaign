@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 6
     },
+    name: {
+        type: String,
+        trim: true,
+        default: 'user'
+    },
     totalEarnings: {
         type: Number,
         default: 0

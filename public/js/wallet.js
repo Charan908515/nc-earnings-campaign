@@ -376,10 +376,125 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.clear();
     });
 
+    // Change Password Logic
     const changePasswordBtn = document.getElementById('changePasswordBtn');
-    if (changePasswordBtn) {
+    const changePasswordModal = document.getElementById('changePasswordModal');
+    const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+    const changePasswordForm = document.getElementById('changePasswordForm');
+
+    if (changePasswordBtn && changePasswordModal) {
+        // Open Modal
         changePasswordBtn.addEventListener('click', () => {
-            showAlert('Password change functionality coming soon!', 'info');
+            changePasswordModal.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                changePasswordModal.classList.remove('opacity-0');
+                changePasswordModal.querySelector('div').classList.remove('scale-95');
+                changePasswordModal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        });
+
+        // Close Modal Function
+        const closeModal = () => {
+            changePasswordModal.classList.add('opacity-0');
+            changePasswordModal.querySelector('div').classList.remove('scale-100');
+            changePasswordModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                changePasswordModal.classList.add('hidden');
+                changePasswordForm.reset();
+            }, 300);
+        };
+
+        if (cancelPasswordBtn) {
+            cancelPasswordBtn.addEventListener('click', closeModal);
+        }
+
+        // Close on clicking outside
+        changePasswordModal.addEventListener('click', (e) => {
+            if (e.target === changePasswordModal) {
+                closeModal();
+            }
+        });
+
+        // Handle Form Submission
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+                const saveBtn = document.getElementById('savePasswordBtn');
+
+                if (newPassword !== confirmNewPassword) {
+                    showAlert('New passwords do not match');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    showAlert('Password must be at least 6 characters');
+                    return;
+                }
+
+                // UI Loading
+                const originalText = saveBtn.textContent;
+                saveBtn.textContent = 'Updating...';
+                saveBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`${API_URL}/wallet/change-password`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ currentPassword, newPassword }),
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showAlert('Password updated successfully!', 'success');
+                        closeModal();
+                    } else {
+                        showAlert(data.message || 'Failed to update password');
+                    }
+                } catch (error) {
+                    console.error('Password change error:', error);
+                    showAlert('Network error');
+                } finally {
+                    saveBtn.textContent = originalText;
+                    saveBtn.disabled = false;
+                }
+            });
+        }
+    }
+
+    // Edit Name Logic
+    const editNameBtn = document.getElementById('editNameBtn');
+    if (editNameBtn) {
+        editNameBtn.addEventListener('click', async () => {
+            const currentName = document.getElementById('userName').textContent;
+            const newName = prompt('Enter your new name:', currentName);
+
+            if (newName && newName.trim() !== '' && newName !== currentName) {
+                try {
+                    const response = await fetch(`${API_URL}/wallet/update-profile`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newName }),
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showAlert('Name updated successfully!', 'success');
+                        loadBalance(); // Reload profile data
+                    } else {
+                        showAlert(data.message || 'Failed to update name');
+                    }
+                } catch (error) {
+                    console.error('Update profile error:', error);
+                    showAlert('Network error');
+                }
+            }
         });
     }
 
@@ -389,9 +504,15 @@ document.addEventListener('DOMContentLoaded', () => {
         withdrawForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const upiId = document.getElementById('upiId').value.trim();
+            const withdrawAmount = document.getElementById('withdrawAmountInput').value;
             const btn = document.getElementById('withdrawBtn');
 
             if (!upiId) return showAlert('Please enter UPI ID');
+
+            // Check if amount is valid
+            if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
+                return showAlert('No balance available to withdraw');
+            }
 
             // UI Loading
             const originalText = btn.textContent;
@@ -403,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${API_URL}/wallet/withdraw`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ upiId }),
+                    body: JSON.stringify({ upiId, amount: parseFloat(withdrawAmount) }), // Send confirmed amount
                     credentials: 'include'
                 });
                 const data = await response.json();
