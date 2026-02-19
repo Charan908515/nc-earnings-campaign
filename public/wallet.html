@@ -7,116 +7,324 @@
     <title id="pageTitle">My Wallet</title>
     <link rel="icon" type="image/jpeg" href="/images/logo.jpg">
     <link rel="apple-touch-icon" href="/images/logo.jpg">
-    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#ff8c5a',
+                            DEFAULT: '#ff6b35',
+                            dark: '#f97316'
+                        },
+                        secondary: {
+                            light: '#ffa366',
+                            DEFAULT: '#ea580c',
+                            dark: '#c2410c'
+                        },
+                        accent: {
+                            light: '#ffb380',
+                            DEFAULT: '#ff9966',
+                            dark: '#ff7733'
+                        },
+                        dark: {
+                            bg: '#121212',
+                            card: '#1e1e1e',
+                            text: '#e0e0e0'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                        heading: ['Plus Jakarta Sans', 'ui-sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        .gradient-card {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+        }
+
+        .nav-item.active {
+            color: #ff6b35;
+        }
+
+        .nav-item.active i {
+            transform: translateY(-2px);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 
-<body>
-    <div class="header">
-        <div class="header-content">
-            <h1 class="logo" id="campaignLogo">NC Earnings</h1>
-            <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
-                <button id="botNotificationBtn" class="btn btn-secondary" style="font-size: 13px; padding: 8px 16px;">
-                    🤖 Bot Notifications
+<body
+    class="bg-gray-50 dark:bg-dark-bg font-sans text-slate-800 dark:text-dark-text pb-20 transition-colors duration-300">
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 left-4 right-4 z-50"></div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div
+        class="max-w-md mx-auto min-h-screen bg-white dark:bg-dark-card shadow-xl overflow-hidden relative transition-colors duration-300">
+
+        <!-- Header -->
+        <header class="bg-primary text-white p-4 pt-8 rounded-b-[2rem] shadow-lg mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-8 -mb-8"></div>
+
+            <div class="flex justify-between items-center relative z-10">
+                <!-- Empty div for alignment balance if needed, or back button future use -->
+                <div class="w-8"></div>
+
+                <h1 class="text-lg font-heading font-bold" id="headerTitle">Wallet</h1>
+
+                <button id="themeToggleBtn"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition relative">
+                    <i class="fas fa-moon text-sm"></i>
                 </button>
-                <button class="btn btn-secondary" id="logoutBtn"
-                    style="font-size: 13px; padding: 8px 16px;">Logout</button>
+            </div>
+        </header>
+
+        <!-- TAB: HOME -->
+        <div id="tab-home" class="tab-content active px-5 pb-24">
+            <!-- Balance Card -->
+            <div class="gradient-card rounded-3xl p-6 text-white shadow-xl mb-6 relative overflow-hidden">
+                <div class="absolute right-0 top-0 p-4 opacity-10">
+                    <i class="fas fa-wallet text-9xl transform rotate-12"></i>
+                </div>
+
+                <div class="relative z-10">
+                    <p class="text-gray-400 text-sm font-medium mb-1">Available Balance</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-bold">₹</span>
+                        <span class="text-4xl font-heading font-bold" id="availableBalance">0.00</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-between items-end">
+                    <div>
+                        <div class="text-xs text-gray-400 mb-1">Total Earned</div>
+                        <div class="font-bold">₹<span id="totalEarned">0.00</span></div>
+                    </div>
+                    <div
+                        class="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <i class="fas fa-wallet text-white"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-4 mb-8">
+                <a href="https://t.me/nccampaigns" target="_blank"
+                    class="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 px-6 rounded-2xl shadow-lg shadow-orange-200 flex items-center justify-center gap-3 font-semibold hover:opacity-95 transition transform hover:-translate-y-1">
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <i class="fab fa-telegram-plane"></i>
+                    </div>
+                    <span>Join Telegram Channel</span>
+                </a>
+
+                <button id="botNotificationBtn"
+                    class="w-full bg-gradient-to-r from-orange-400 to-orange-500 text-white py-4 px-6 rounded-2xl shadow-lg shadow-orange-200 flex items-center justify-center gap-3 font-semibold hover:opacity-95 transition transform hover:-translate-y-1">
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span>Alert Bot Activation</span>
+                </button>
+            </div>
+
+            <!-- Recent Activity Preview -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-800 dark:text-gray-200">Recent Activity</h3>
+                    <button id="seeAllActivityBtn" class="text-primary text-sm font-medium">See All</button>
+                </div>
+
+                <div id="recentActivityList" class="space-y-3">
+                    <!-- Loading skeleton -->
+                    <div
+                        class="animate-pulse flex items-center justify-between bg-white dark:bg-card-bg p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
+                            <div>
+                                <div class="h-4 w-24 bg-gray-200 dark:bg-gray-600 rounded mb-1"></div>
+                                <div class="h-3 w-16 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                            </div>
+                        </div>
+                        <div class="h-4 w-12 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="container">
-        <div id="alertContainer"></div>
+        <!-- TAB: WITHDRAW -->
+        <div id="tab-withdraw" class="tab-content px-5 pb-24">
+            <div
+                class="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
+                <p class="text-gray-500 text-sm mb-2">Withdrawal Balance</p>
+                <div class="text-3xl font-heading font-bold text-gray-800 dark:text-gray-200 mb-6">₹<span
+                        id="withdrawPageBalance">0.00</span></div>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid fade-in">
-            <div class="stat-card" style="grid-column: 1 / -1;">
-                <div class="stat-label">Available Balance</div>
-                <div class="stat-value">₹<span id="availableBalance">0</span></div>
-            </div>
-        </div>
-
-        <!-- Bot Instruction (Small) -->
-        <div class="fade-in"
-            style="margin-bottom: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
-            To enable notifications, send: <code
-                style="background: rgba(139, 92, 246, 0.2); padding: 4px 8px; border-radius: 4px; color: var(--primary-light);">/start <span id="userMobileForBot">YOUR_UPI_ID</span></code>
-            to the bot.
-        </div>
-
-        <!-- Withdrawal Section -->
-        <div class="card fade-in">
-            <h2 class="card-header">Withdraw Earnings</h2>
-
-            <button id="showWithdrawBtn" class="btn btn-success btn-block" style="margin-bottom: 0;">
-                💸 Withdraw Funds
-            </button>
-
-            <div id="withdrawSection" class="hidden" style="margin-top: 20px;">
-                <form id="withdrawForm">
-                    <div class="form-group">
-                        <label class="form-label" for="upiId">UPI ID</label>
-                        <input type="text" id="upiId" class="form-input" placeholder="yourname@upi" required>
+                <form id="withdrawForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Withdraw
+                            Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                            <input type="text" id="withdrawAmountInput"
+                                class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                                placeholder="0" readonly>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Withdrawal Amount</label>
-                        <input type="text" class="form-input" id="withdrawAmount" readonly>
-                        <small class="text-muted">Your entire available balance will be withdrawn</small>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Withdraw to (UPI
+                            ID)</label>
+                        <div class="relative">
+                            <input type="text" id="upiId"
+                                class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl py-3 pl-4 pr-12 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                                placeholder="example@upi" required>
+                            <img src="https://cdn-icons-png.flaticon.com/512/10103/10103212.png"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 opacity-60" alt="UPI">
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-secondary" id="cancelWithdrawBtn"
-                            style="flex: 1;">Cancel</button>
-                        <button type="submit" class="btn btn-success" id="withdrawBtn" style="flex: 2;">
-                            Submit Request
-                        </button>
-                    </div>
+
+                    <button type="submit" id="withdrawBtn"
+                        class="w-full bg-gradient-to-r from-primary to-secondary text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition transform hover:-translate-y-1 mt-4">
+                        Withdraw
+                    </button>
+                    <p class="text-xs text-center text-gray-400 mt-2">Withdrawals are processed within 24 hours.</p>
                 </form>
             </div>
-        </div>
 
-        <!-- Earnings History -->
-        <div class="card fade-in">
-            <h2 class="card-header">Earnings History</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Campaign</th>
-                            <th>Event Type</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="earningsTable">
-                        <tr>
-                            <td colspan="4" class="text-center text-muted">Loading...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div>
+                <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-4">Withdraw History</h3>
+                <div id="withdrawHistoryList" class="space-y-3">
+                    <!-- Loading state -->
+                    <p class="text-center text-gray-400 py-4">Loading history...</p>
+                </div>
             </div>
         </div>
 
-        <!-- Withdrawal History -->
-        <div class="card fade-in">
-            <h2 class="card-header">Withdrawal History</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>UPI ID</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="withdrawalsTable">
-                        <tr>
-                            <td colspan="4" class="text-center text-muted">Loading...</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- TAB: HISTORY (TRANSACTIONS) -->
+        <div id="tab-history" class="tab-content px-5 pb-24">
+            <div id="transactionHistoryList" class="space-y-3">
+                <!-- Populated by JS -->
+                <div class="text-center py-10">
+                    <div
+                        class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4">
+                    </div>
+                    <p class="text-gray-500">Loading transactions...</p>
+                </div>
             </div>
         </div>
+
+        <!-- TAB: ACCOUNT -->
+        <div id="tab-account" class="tab-content px-5 pb-24">
+            <div
+                class="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6 flex items-center gap-4">
+                <div
+                    class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden border-2 border-primary p-1">
+                    <img src="https://ui-avatars.com/api/?name=User&background=random" id="userAvatar"
+                        class="w-full h-full rounded-full object-cover">
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white" id="userName">User</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400" id="userEmail">Loading...</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400" id="userMobile"></p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button id="changePasswordBtn"
+                    class="w-full bg-white dark:bg-dark-card rounded-xl p-4 flex items-center justify-between shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition border border-transparent hover:border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-500">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <span class="font-medium text-gray-700 dark:text-gray-200">Change Password</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300"></i>
+                </button>
+
+                <button id="logoutBtn"
+                    class="w-full bg-white dark:bg-dark-card rounded-xl p-4 flex items-center justify-between shadow-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition border border-transparent hover:border-red-100 dark:border-red-900/20">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </div>
+                        <span class="font-medium">Logout</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-red-200"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div
+            class="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-gray-100 dark:border-gray-700 px-6 py-3 pb-5 flex justify-between items-center z-40 max-w-md mx-auto transition-colors duration-300">
+            <button id="nav-home" class="nav-item active flex flex-col items-center gap-1 text-gray-400 transition">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-[10px] font-medium">Home</span>
+            </button>
+            <button id="nav-history" class="nav-item flex flex-col items-center gap-1 text-gray-400 transition">
+                <i class="fas fa-history text-xl"></i>
+                <span class="text-[10px] font-medium">History</span>
+            </button>
+            <button id="nav-withdraw" class="nav-item flex flex-col items-center gap-1 text-gray-400 transition">
+                <i class="fas fa-wallet text-xl"></i>
+                <span class="text-[10px] font-medium">Withdraw</span>
+            </button>
+            <button id="nav-account" class="nav-item flex flex-col items-center gap-1 text-gray-400 transition">
+                <i class="fas fa-user text-xl"></i>
+                <span class="text-[10px] font-medium">Account</span>
+            </button>
+        </div>
+
     </div>
 
     <script src="/js/wallet.js"></script>

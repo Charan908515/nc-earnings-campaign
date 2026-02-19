@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NC Campaigns - Track Campaign Earnings & Withdraw via UPI | Start Earning Today</title>
+    <link rel="icon" type="image/jpeg" href="/images/logo.jpg">
+    <link rel="apple-touch-icon" href="/images/logo.jpg">
+
+    <meta name="title" content="NC Campaigns - Track Campaign Earnings & Withdraw via UPI">
+    <meta name="description"
+        content="Track your campaign earnings in real-time, get instant Telegram notifications, and withdraw easily via UPI. Join 5K+ active users earning with NC Campaigns.">
+    <meta name="keywords"
+        content="campaign earnings, UPI withdrawal, cashback, affiliate marketing, telegram notifications, real-time tracking, earn money online, NC Campaigns, campaign tracker, instant payout">
+    <meta name="author" content="NC Campaigns">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://www.nccampaigns.xyz/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.nccampaigns.xyz/">
+    <meta property="og:title" content="NC Campaigns - Track Campaign Earnings & Withdraw via UPI">
+    <meta property="og:description"
+        content="Track your campaign earnings in real-time, get instant Telegram notifications, and withdraw easily via UPI. Join 5K+ active users.">
+    <meta property="og:image" content="https://www.nccampaigns.xyz/images/logo.jpg">
+    <meta property="og:site_name" content="NC Campaigns">
+    <meta property="og:locale" content="en_US">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.nccampaigns.xyz/">
+    <meta property="twitter:title" content="NC Campaigns - Track Campaign Earnings & Withdraw via UPI">
+    <meta property="twitter:description"
+        content="Track your campaign earnings in real-time, get instant Telegram notifications, and withdraw easily via UPI.">
+    <meta property="twitter:image" content="https://www.nccampaigns.xyz/images/logo.jpg">
+
+    <meta name="theme-color" content="#ff6b35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#ff8c5a',
+                            DEFAULT: '#ff6b35',
+                            dark: '#f97316'
+                        },
+                        secondary: {
+                            light: '#ffa366',
+                            DEFAULT: '#ea580c',
+                            dark: '#c2410c'
+                        },
+                        accent: {
+                            light: '#ffb380',
+                            DEFAULT: '#ff9966',
+                            dark: '#ff7733'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                        heading: ['Plus Jakarta Sans', 'ui-sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <style>
+        /* Custom Styles */
+        .gradient-bg {
+            background: linear-gradient(120deg, #fff5f0 0%, #ffe8dc 50%, #ffd4c1 100%);
+        }
+
+        .dark .gradient-bg {
+            background: linear-gradient(120deg, #1a0f0a 0%, #2d1810 50%, #3d2015 100%);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px) rotate(1deg);
+            box-shadow: 0 25px 50px -12px rgba(255, 107, 53, 0.25);
+        }
+
+        .hexagon {
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+
+        .diamond {
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Preloader Animation */
+        @keyframes spin-fast {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin-fast {
+            animation: spin-fast 1.2s linear infinite;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ff6b35;
+            border-radius: 10px;
+        }
+
+        /* Custom Shapes */
+        .custom-shape {
+            position: absolute;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            border-radius: 49% 51% 70% 30% / 30% 43% 57% 70%;
+            background: linear-gradient(45deg, #ff6b35, #ff8c5a);
+            opacity: 0.15;
+            top: 5%;
+            left: 10%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            width: 250px;
+            height: 250px;
+            border-radius: 49% 51% 70% 30% / 30% 43% 57% 70%;
+            background: linear-gradient(45deg, #ea580c, #f97316);
+            opacity: 0.15;
+            bottom: 10%;
+            right: 10%;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        .shape-3 {
+            width: 200px;
+            height: 200px;
+            border-radius: 49% 51% 70% 30% / 30% 43% 57% 70%;
+            background: linear-gradient(45deg, #ff9966, #ffb380);
+            opacity: 0.15;
+            top: 40%;
+            left: 5%;
+            animation: float 18s ease-in-out infinite;
+        }
+
+        .zigzag-divider {
+            position: relative;
+            height: 30px;
+            background: linear-gradient(135deg, #ff6b35 25%, transparent 25%) -50px 0,
+                linear-gradient(225deg, #ff6b35 25%, transparent 25%) -50px 0,
+                linear-gradient(315deg, #ff6b35 25%, transparent 25%),
+                linear-gradient(45deg, #ff6b35 25%, transparent 25%);
+            background-size: 30px 30px;
+            background-color: #fff5f0;
+        }
+
+        .dark .zigzag-divider {
+            background: linear-gradient(135deg, #c2410c 25%, transparent 25%) -50px 0,
+                linear-gradient(225deg, #c2410c 25%, transparent 25%) -50px 0,
+                linear-gradient(315deg, #c2410c 25%, transparent 25%),
+                linear-gradient(45deg, #c2410c 25%, transparent 25%);
+            background-size: 30px 30px;
+            background-color: #1a0f0a;
+        }
+
+        .floating-card {
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .floating-card:nth-child(2) {
+            animation-delay: 2s;
+        }
+
+        .floating-card:nth-child(3) {
+            animation-delay: 4s;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gradient-to-br from-slate-50 to-orange-50 font-sans antialiased text-slate-800 dark:from-slate-900 dark:to-slate-800 dark:text-slate-200 transition-colors duration-300">
+    <div id="preloader"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-slate-900 transition-all duration-500">
+        <div class="relative">
+            <div
+                class="w-20 h-20 rounded-full border-4 border-t-transparent border-b-transparent border-l-primary border-r-primary animate-spin-fast">
+            </div>
+            <div class="w-14 h-14 rounded-full border-4 border-t-transparent border-b-transparent border-l-secondary border-r-secondary animate-spin-fast absolute top-3 left-3"
+                style="animation-duration: 1.5s; animation-direction: reverse;"></div>
+            <img src="/images/logo.jpg" alt="NC Campaign"
+                class="absolute inset-0 m-5 w-10 h-10 rounded-full object-cover">
+        </div>
+    </div>
+
+    <div class="custom-shape shape-1"></div>
+    <div class="custom-shape shape-2"></div>
+    <div class="custom-shape shape-3"></div>
+
+    <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-secondary p-0.5 mr-3">
+                        <img src="/images/logo.jpg" alt="NC Campaign" class="w-full h-full rounded-full object-cover">
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-heading font-bold text-slate-800 dark:text-white">NC Campaigns
+                    </h1>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <a href="https://t.me/nccampaigns" target="_blank"
+                        class="bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 px-4 py-2 rounded-lg font-medium flex items-center transition-all duration-300 shadow-md hover:shadow-lg">
+                        <i class="fab fa-telegram mr-2 text-lg"></i>
+                        <span class="hidden md:inline-block">Join Telegram</span>
+                    </a>
+                    <button id="theme-toggle"
+                        class="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white transition-colors duration-300">
+                        <i class="fas fa-moon text-lg" id="theme-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="relative gradient-bg text-slate-800 dark:text-white py-16 md:py-24 overflow-hidden">
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-10 md:mb-0" data-aos="fade-right">
+                    <div
+                        class="inline-flex items-center glass-effect dark:glass-effect backdrop-blur-sm rounded-full px-4 py-1 mb-6">
+                        <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                        <span class="text-sm font-medium">EXCLUSIVE OFFERS AVAILABLE</span>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-6 leading-tight">
+                        <span class="block">Start Earning</span>
+                        <span
+                            class="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Real
+                            Money</span>
+                        <span class="block">With Campaigns</span>
+                    </h1>
+                    <p class="text-lg text-slate-600 dark:text-slate-300 mb-8 max-w-lg">
+                        Track your campaign earnings in real-time, get instant Telegram notifications, and withdraw
+                        easily via UPI.
+                    </p>
+
+
+                    <div class="flex flex-wrap gap-4">
+                        <a href="https://t.me/nccampaigns" target="_blank"
+                            class="bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 px-6 py-3 rounded-lg font-bold text-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                            <i class="fab fa-telegram mr-3"></i> Join Telegram
+                        </a>
+                    </div>
+                </div>
+
+                <div class="md:w-1/2 relative" data-aos="fade-left" data-aos-delay="200">
+                    <div
+                        class="floating-card absolute -top-10 -left-10 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg z-10">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-rupee-sign text-green-600 dark:text-green-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-green-600 dark:text-green-400">+ ₹250</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">Earnings Today</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="floating-card absolute top-10 -right-5 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg z-10">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-bell text-orange-600 dark:text-orange-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-orange-600 dark:text-orange-400">Instant</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">Notifications</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="floating-card absolute bottom-10 left-0 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg z-10">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-bolt text-blue-600 dark:text-blue-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-blue-600 dark:text-blue-400">24h</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">Quick Payout</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative z-0">
+                        <div
+                            class="w-64 h-64 md:w-80 md:h-80 mx-auto rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center p-2">
+                            <div
+                                class="w-full h-full rounded-full bg-white dark:bg-slate-800 flex items-center justify-center p-8">
+                                <img src="/images/logo.jpg" alt="NC Campaign"
+                                    class="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-0 left-0 w-full">
+            <div class="zigzag-divider"></div>
+        </div>
+    </section>
+
+    <section class="py-16 bg-white dark:bg-slate-800 relative">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">How It Works</h2>
+                <p class="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+                    Start earning in three simple steps - track, earn, and withdraw
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-gradient-to-br from-orange-50 to-red-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-2xl shadow-md card-hover text-center"
+                    data-aos="fade-up" data-aos-delay="100">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-2xl flex items-center justify-center mb-4 mx-auto text-white text-2xl">
+                        1
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-slate-800 dark:text-white">Create Wallet</h3>
+                    <p class="text-slate-600 dark:text-slate-300">Register with your UPI ID and create your secure
+                        wallet account
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-br from-orange-50 to-red-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-2xl shadow-md card-hover text-center"
+                    data-aos="fade-up" data-aos-delay="200">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-2xl flex items-center justify-center mb-4 mx-auto text-white text-2xl">
+                        2
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-slate-800 dark:text-white">Track Earnings</h3>
+                    <p class="text-slate-600 dark:text-slate-300">Monitor your campaign earnings in real-time with
+                        instant
+                        notifications</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-orange-50 to-red-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-2xl shadow-md card-hover text-center"
+                    data-aos="fade-up" data-aos-delay="300">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-2xl flex items-center justify-center mb-4 mx-auto text-white text-2xl">
+                        3
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-slate-800 dark:text-white">Withdraw Easily</h3>
+                    <p class="text-slate-600 dark:text-slate-300">Request withdrawals directly to your UPI account
+                        within 24 hours
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16 bg-slate-50 dark:bg-slate-900 relative">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">Why Join Our Telegram?</h2>
+                <p class="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+                    Stay connected and never miss an update
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md card-hover" data-aos="fade-up"
+                    data-aos-delay="100">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center mb-4 text-white text-xl">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Stay Updated</h3>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm">Get notified about new campaigns and
+                        opportunities</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md card-hover" data-aos="fade-up"
+                    data-aos-delay="200">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center mb-4 text-white text-xl">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Payment Confirmations</h3>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm">Receive instant alerts when withdrawals are
+                        processed
+                    </p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md card-hover" data-aos="fade-up"
+                    data-aos-delay="300">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center mb-4 text-white text-xl">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Community Support</h3>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm">Connect with other users and get help when
+                        needed</p>
+                </div>
+            </div>
+
+            <div class="text-center mt-12" data-aos="fade-up" data-aos-delay="400">
+                <a href="https://t.me/nccampaigns" target="_blank"
+                    class="inline-flex items-center bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <i class="fab fa-telegram mr-3 text-2xl"></i> Join Our Telegram Channel
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16 bg-gradient-to-r from-primary to-secondary text-white">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="text-center" data-aos="fade-up" data-aos-delay="100">
+                    <div class="text-3xl md:text-4xl font-bold mb-3">5K+</div>
+                    <h3 class="text-lg font-medium">Active Users</h3>
+                </div>
+
+                <div class="text-center" data-aos="fade-up" data-aos-delay="200">
+                    <div class="text-3xl md:text-4xl font-bold mb-3">₹10L+</div>
+                    <h3 class="text-lg font-medium">Paid Out</h3>
+                </div>
+
+                <div class="text-center" data-aos="fade-up" data-aos-delay="300">
+                    <div class="text-3xl md:text-4xl font-bold mb-3">100+</div>
+                    <h3 class="text-lg font-medium">Campaigns</h3>
+                </div>
+
+                <div class="text-center" data-aos="fade-up" data-aos-delay="400">
+                    <div class="text-3xl md:text-4xl font-bold mb-3">24/7</div>
+                    <h3 class="text-lg font-medium">Support</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16 bg-white dark:bg-slate-800">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4" data-aos="fade-up">Featured Offers</h2>
+            <p class="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8" data-aos="fade-up"
+                data-aos-delay="100">
+                Limited time deals with exclusive cashback rates
+            </p>
+
+            <div class="max-w-md mx-auto bg-slate-50 dark:bg-slate-900 rounded-2xl p-12" data-aos="fade-up"
+                data-aos-delay="200">
+                <div class="w-64 h-64 mx-auto mb-6 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" class="w-full h-full">
+                        <ellipse cx="250" cy="350" rx="200" ry="30" fill="#e2e8f0" opacity="0.5" />
+
+                        <circle cx="180" cy="180" r="80" fill="#8b5cf6" opacity="0.2" />
+                        <circle cx="180" cy="180" r="60" fill="#8b5cf6" opacity="0.3" />
+                        <line x1="180" y1="180" x2="180" y2="140" stroke="#8b5cf6" stroke-width="4"
+                            stroke-linecap="round" />
+                        <line x1="180" y1="180" x2="210" y2="180" stroke="#8b5cf6" stroke-width="4"
+                            stroke-linecap="round" />
+                        <circle cx="180" cy="180" r="8" fill="#8b5cf6" />
+
+                        <circle cx="320" cy="200" r="30" fill="#ff6b35" />
+                        <path
+                            d="M 320 230 L 320 310 M 320 260 L 280 290 M 320 260 L 360 290 M 320 310 L 290 360 M 320 310 L 350 360"
+                            stroke="#ff6b35" stroke-width="8" stroke-linecap="round" fill="none" />
+
+                        <rect x="100" y="80" width="20" height="20" fill="#10b981" opacity="0.6" rx="2" />
+                        <rect x="130" y="100" width="15" height="15" fill="#f97316" opacity="0.6" rx="2" />
+                        <circle cx="380" cy="120" r="6" fill="#3b82f6" opacity="0.6" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-4 text-slate-800 dark:text-white">No Offers Available Right Now</h3>
+                <p class="text-slate-600 dark:text-slate-300 mb-6">We're working on bringing you new exciting offers
+                    soon!</p>
+                <button onclick="location.reload()"
+                    class="bg-gradient-to-r from-primary to-secondary text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transition-all duration-300 inline-flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-slate-800 text-slate-300 pt-12 pb-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div>
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-secondary p-0.5 mr-3">
+                            <img src="/images/logo.jpg" alt="NC Campaign"
+                                class="w-full h-full rounded-full object-cover">
+                        </div>
+                        <h3 class="text-xl font-bold text-white">NC Campaigns</h3>
+                    </div>
+                    <p class="mb-6">Your trusted platform for tracking campaign earnings and managing withdrawals
+                        securely.</p>
+                    <div class="flex space-x-4">
+                        <a href="https://t.me/nccampaigns" target="_blank"
+                            class="w-10 h-10 bg-slate-700 hover:bg-primary rounded-full flex items-center justify-center text-white transition-colors duration-300">
+                            <i class="fab fa-telegram text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-white font-bold text-lg mb-6">Quick Links</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;"
+                                class="hover:text-white transition-colors duration-300">Home</a></li>
+                        <li><a href="https://t.me/nccampaigns" target="_blank"
+                                class="hover:text-white transition-colors duration-300">Register</a></li>
+                        <li><a href="https://t.me/nccampaigns" target="_blank"
+                                class="hover:text-white transition-colors duration-300">Login</a></li>
+                        <li><a href="https://t.me/nccampaigns" target="_blank"
+                                class="hover:text-white transition-colors duration-300">Telegram</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-white font-bold text-lg mb-6">Features</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Real-time tracking
+                        </li>
+                        <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Instant
+                            notifications</li>
+                        <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Easy UPI
+                            withdrawals</li>
+                        <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> 24/7 support</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-700 pt-8 text-center">
+                <p>© 2026 NC Campaigns. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <button id="back-to-top"
+        class="fixed bottom-8 right-8 bg-gradient-to-r from-primary to-secondary text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 opacity-0 invisible">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Initialize AOS animation
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            offset: 100
+        });
+
+        // Preloader
+        window.addEventListener('load', function () {
+            const preloader = document.getElementById('preloader');
+            setTimeout(() => {
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 500);
+            }, 500);
+        });
+
+        // Back to top button
+        $(window).scroll(function () {
+            if ($(this).scrollTop() > 300) {
+                $('#back-to-top').removeClass('opacity-0 invisible').addClass('opacity-100 visible');
+            } else {
+                $('#back-to-top').removeClass('opacity-100 visible').addClass('opacity-0 invisible');
+            }
+        });
+
+        $('#back-to-top').click(function () {
+            $('html, body').animate({ scrollTop: 0 }, 'smooth');
+            return false;
+        });
+
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            html.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+
+            if (html.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        });
+    </script>
+
+    <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "NC Campaigns",
+    "url": "https://www.nccampaigns.xyz/",
+    "description": "Track your campaign earnings in real-time, get instant Telegram notifications, and withdraw easily via UPI.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://www.nccampaigns.xyz/?s={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+    <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "NC Campaigns",
+    "url": "https://www.nccampaigns.xyz/",
+    "logo": "https://www.nccampaigns.xyz/images/logo.jpg",
+    "sameAs": [
+      "https://t.me/nccampaigns"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "Customer Support",
+      "availableLanguage": ["English"]
+    }
+  }
+  </script>
+
+</body>
+
+</html>

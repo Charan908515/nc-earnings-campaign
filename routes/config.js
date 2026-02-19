@@ -27,7 +27,9 @@ router.get('/public', async (req, res) => {
                 displayTitle: `${activeCampaign.name} Campaign`,
                 description: activeCampaign.description,
                 isActive: activeCampaign.isActive,
-                branding: activeCampaign.branding
+                isActive: activeCampaign.isActive,
+                branding: activeCampaign.branding,
+                process: activeCampaign.process
             },
             userInput: activeCampaign.userInput,
             userInput: activeCampaign.userInput,

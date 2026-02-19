@@ -1,53 +1,96 @@
 const API_URL = '/api';
-const AFFILIATE_BASE_URL = 'https://aff.pro-campaign.in/c?o=38&a=49&aff_click_id=';
 
-// Authentication is now handled by HTTP-only cookies on the server
-// The server will redirect to /auth if not authenticated
+// Theme Switching
+function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.classList.toggle('dark');
 
-// DOM Elements
-const alertContainer = document.getElementById('alertContainer');
-const availableBalanceEl = document.getElementById('availableBalance');
-const withdrawForm = document.getElementById('withdrawForm');
-const withdrawAmountEl = document.getElementById('withdrawAmount');
-const earningsTable = document.getElementById('earningsTable');
-const withdrawalsTable = document.getElementById('withdrawalsTable');
-const logoutBtn = document.getElementById('logoutBtn');
+    // Save preference
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
 
-let userData = null;
-let config = null;
+    // Update icon
+    updateThemeIcon(isDark);
+}
 
-// Load campaign configuration
-async function loadCampaignConfig() {
-    try {
-        const response = await fetch('/api/config/public');
-        if (response.ok) {
-            config = await response.json();
-            // Update page branding
-            const logoEl = document.getElementById('campaignLogo');
-            const titleEl = document.getElementById('pageTitle');
-            if (logoEl && config.campaign && config.campaign.branding) {
-                logoEl.textContent = config.campaign.branding.logoText || 'NC Earnings';
-            }
-            if (titleEl && config.campaign) {
-                titleEl.textContent = `My Wallet - ${config.campaign.name || 'NC Earnings'}`;
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load campaign config:', error);
-        // Use defaults
-        const logoEl = document.getElementById('campaignLogo');
-        if (logoEl) logoEl.textContent = 'NC Earnings';
+function updateThemeIcon(isDark) {
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+        btn.innerHTML = isDark ? '<i class="fas fa-sun text-yellow-300 text-sm"></i>' : '<i class="fas fa-moon text-sm"></i>';
     }
+}
+
+// Initialize Theme
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcon(true);
+    } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcon(false);
+    }
+}
+
+// Tab Switching Logic
+function switchTab(tabId) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+        tab.classList.remove('hidden'); // Ensure hidden class is removed if toggled elsewhere
+        tab.style.display = 'none'; // Explicitly hide
+    });
+
+    // Show selected tab
+    const selectedTab = document.getElementById(`tab-${tabId}`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+        selectedTab.style.display = 'block'; // Explicitly show
+    }
+
+    // Update Bottom Nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        item.classList.remove('text-primary'); // Remove active color
+        item.classList.add('text-gray-400'); // Add inactive color
+    });
+
+    // Highlight active nav item
+    const activeNav = document.getElementById(`nav-${tabId}`);
+    if (activeNav) {
+        activeNav.classList.add('active');
+        activeNav.classList.remove('text-gray-400');
+        activeNav.classList.add('text-primary');
+    }
+
+    // Refresh title based on tab
+    const titleMap = {
+        'home': 'Wallet',
+        'history': 'Transaction History',
+        'withdraw': 'Withdraw Money',
+        'account': 'Profile'
+    };
+    const headerTitle = document.getElementById('headerTitle');
+    if (headerTitle) headerTitle.textContent = titleMap[tabId] || 'Wallet';
 }
 
 // Show alert
 function showAlert(message, type = 'error') {
-    const alertClass = type === 'success' ? 'alert-success' : type === 'info' ? 'alert-info' : 'alert-error';
+    const alertContainer = document.getElementById('alertContainer');
+    const colorClass = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' :
+        type === 'info' ? 'bg-blue-100 border-blue-500 text-blue-700' :
+            'bg-red-100 border-red-500 text-red-700';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'info' ? 'fa-info-circle' : 'fa-exclamation-circle';
+
     alertContainer.innerHTML = `
-    <div class="alert ${alertClass}">
-      ${message}
-    </div>
-  `;
+        <div class="flex items-center p-4 mb-4 text-sm border-l-4 rounded shadow-md ${colorClass} animate-bounce" role="alert">
+            <i class="fas ${icon} text-lg mr-3"></i>
+            <div>
+                <span class="font-medium">${type === 'success' ? 'Success!' : 'Notice:'}</span> ${message}
+            </div>
+        </div>
+    `;
 
     setTimeout(() => {
         alertContainer.innerHTML = '';
@@ -57,271 +100,330 @@ function showAlert(message, type = 'error') {
 // Format date
 function formatDate(dateString) {
     const date = new Date(dateString);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+        return `Today, ${date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
     return date.toLocaleDateString('en-IN', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        day: 'numeric'
     });
 }
 
-// Load user balance
+// Format Currency
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+}
+
+let userData = null;
+
+// Load user balance & profile
 async function loadBalance() {
     try {
-        const response = await fetch(`${API_URL}/wallet/balance`, {
-            credentials: 'include' // Include cookies
-        });
-
+        const response = await fetch(`${API_URL}/wallet/balance`, { credentials: 'include' });
         const data = await response.json();
 
         if (data.success) {
             userData = data.data;
-            availableBalanceEl.textContent = data.data.availableBalance;
-            withdrawAmountEl.value = `₹${data.data.availableBalance}`;
 
-            // Update Telegram bot instruction with user's UPI ID
-            const userMobileForBot = document.getElementById('userMobileForBot');
-            if (userMobileForBot) {
-                userMobileForBot.textContent = data.data.upiId || data.data.mobileNumber;
+            // Update Balance Displays
+            const balanceFormatted = formatCurrency(data.data.availableBalance);
+            const totalEarnedFormatted = formatCurrency(data.data.totalEarnings || 0); // Assuming API returns this, or we calculate
+
+            document.getElementById('availableBalance').textContent = balanceFormatted;
+            document.getElementById('withdrawPageBalance').textContent = balanceFormatted;
+            document.getElementById('totalEarned').textContent = totalEarnedFormatted;
+            const withdrawInput = document.getElementById('withdrawAmountInput');
+            if (withdrawInput) withdrawInput.value = data.data.availableBalance;
+
+            // Update Profile Info
+            const userNameEl = document.getElementById('userName');
+            const userEmailEl = document.getElementById('userEmail');
+            const userMobileEl = document.getElementById('userMobile'); // Might check if element exists
+
+            if (userNameEl) userNameEl.textContent = data.data.name || 'User';
+            // Use UPI ID as identifier if email is missing or generic
+            if (userEmailEl) userEmailEl.textContent = data.data.email || data.data.upiId;
+            if (userMobileEl && data.data.mobileNumber) userMobileEl.textContent = data.data.mobileNumber;
+
+            // Update Avatar Name
+            const avatarImg = document.getElementById('userAvatar');
+            if (avatarImg && data.data.name) {
+                avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.data.name)}&background=ff6b35&color=fff`;
             }
+
         } else {
             showAlert('Failed to load balance');
         }
     } catch (error) {
         console.error('Balance load error:', error);
-        showAlert('Network error loading balance');
     }
 }
 
-// Load earnings history
+// Load Earnings History (Mapped to Transaction History tab)
 async function loadEarningsHistory() {
     try {
-        const response = await fetch(`${API_URL}/wallet/history`, {
-            credentials: 'include' // Include cookies
-        });
-
+        const response = await fetch(`${API_URL}/wallet/history`, { credentials: 'include' });
         const data = await response.json();
+        const listContainer = document.getElementById('transactionHistoryList');
+        const recentActivityList = document.getElementById('recentActivityList'); // For Home Tab
 
         if (data.success) {
             if (data.data.length === 0) {
-                earningsTable.innerHTML = `
-          <tr>
-            <td colspan="4" class="text-center text-muted">No earnings yet. Share your affiliate link to start earning!</td>
-          </tr>
-        `;
+                const emptyState = `
+                    <div class="text-center py-10">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                            <i class="fas fa-receipt text-2xl"></i>
+                        </div>
+                        <p class="text-gray-500 font-medium">No transactions yet</p>
+                        <p class="text-xs text-gray-400 mt-1">Your earnings will appear here.</p>
+                    </div>
+                `;
+                listContainer.innerHTML = emptyState;
+                if (recentActivityList) recentActivityList.innerHTML = emptyState;
             } else {
-                earningsTable.innerHTML = data.data.map(earning => `
-          <tr>
-            <td>${formatDate(earning.createdAt)}</td>
-            <td>${earning.campaignName || 'Unknown'}</td>
-            <td><span class="badge badge-primary">${earning.eventType}</span></td>
-            <td>₹${earning.payment}</td>
-            <td><span class="badge badge-success">Credited</span></td>
-          </tr>
-        `).join('');
+                const historyHTML = data.data.map(item => `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500 flex-shrink-0">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">${item.campaignName || 'Campaign Reward'}</h4>
+                                <p class="text-xs text-gray-400 capitalize">${item.eventType} • ${formatDate(item.createdAt)}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                             <div class="font-bold text-green-600">+₹${formatCurrency(item.payment)}</div>
+                             <div class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full inline-block">Success</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                listContainer.innerHTML = historyHTML;
+
+                // Update Recent Activity (Home Tab) - Show top 3
+                if (recentActivityList) {
+                    const recentItems = data.data.slice(0, 3).map(item => `
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500 text-xs flex-shrink-0">
+                                    <i class="fas fa-arrow-down"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <h4 class="font-bold text-gray-800 text-xs truncate">${item.campaignName || 'Reward'}</h4>
+                                    <p class="text-[10px] text-gray-400 truncate">${formatDate(item.createdAt)}</p>
+                                </div>
+                            </div>
+                            <div class="font-bold text-green-600 text-sm whitespace-nowrap">+₹${formatCurrency(item.payment)}</div>
+                        </div>
+                    `).join('');
+                    recentActivityList.innerHTML = recentItems;
+                }
             }
         }
     } catch (error) {
-        console.error('Earnings history error:', error);
-        earningsTable.innerHTML = `
-      <tr>
-        <td colspan="4" class="text-center text-muted">Error loading earnings</td>
-      </tr>
-    `;
+        console.error('History load error:', error);
     }
 }
 
-// Load withdrawal history
+// Load Withdrawal History
 async function loadWithdrawalHistory() {
     try {
-        const response = await fetch(`${API_URL}/wallet/withdrawals`, {
-            credentials: 'include' // Include cookies
-        });
-
+        const response = await fetch(`${API_URL}/wallet/withdrawals`, { credentials: 'include' });
         const data = await response.json();
+        const listContainer = document.getElementById('withdrawHistoryList');
 
         if (data.success) {
             if (data.data.length === 0) {
-                withdrawalsTable.innerHTML = `
-          <tr>
-            <td colspan="4" class="text-center text-muted">No withdrawal requests yet</td>
-          </tr>
-        `;
+                listContainer.innerHTML = `
+                    <div class="text-center py-6">
+                        <p class="text-gray-400 text-sm">No withdrawal history</p>
+                    </div>
+                `;
             } else {
-                withdrawalsTable.innerHTML = data.data.map(withdrawal => {
-                    let statusBadge = '';
-                    if (withdrawal.status === 'pending') {
-                        statusBadge = '<span class="badge badge-warning">Pending</span>';
-                    } else if (withdrawal.status === 'completed') {
-                        statusBadge = '<span class="badge badge-success">Completed</span>';
-                    } else {
-                        statusBadge = '<span class="badge badge-danger">Rejected</span>';
+                listContainer.innerHTML = data.data.map(item => {
+                    let statusColor = 'text-yellow-600 bg-yellow-50';
+                    let icon = 'fa-clock';
+
+                    if (item.status === 'completed' || item.status === 'approved') { // Handling 'approved' which is common
+                        statusColor = 'text-green-600 bg-green-50';
+                        icon = 'fa-check';
+                    } else if (item.status === 'rejected') {
+                        statusColor = 'text-red-600 bg-red-50';
+                        icon = 'fa-times';
                     }
 
                     return `
-            <tr>
-              <td>${formatDate(withdrawal.requestedAt)}</td>
-              <td>₹${withdrawal.amount}</td>
-              <td>${withdrawal.upiId}</td>
-              <td>${statusBadge}</td>
-            </tr>
-          `;
-                }).join('');
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 flex-shrink-0">
+                                <i class="fas fa-university"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Withdrawal</h4>
+                                <p class="text-xs text-gray-400">${formatDate(item.requestedAt)}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                             <div class="font-bold text-gray-800">-₹${formatCurrency(item.amount)}</div>
+                             <div class="text-[10px] ${statusColor} px-2 py-0.5 rounded-full inline-flex items-center gap-1 justify-end ml-auto mt-1">
+                                <i class="fas ${icon} text-[8px]"></i> ${item.status}
+                             </div>
+                        </div>
+                    </div>
+                `}).join('');
             }
         }
     } catch (error) {
-        console.error('Withdrawal history error:', error);
-        withdrawalsTable.innerHTML = `
-      <tr>
-        <td colspan="4" class="text-center text-muted">Error loading withdrawals</td>
-      </tr>
-    `;
+        console.error('Withdraw history error:', error);
     }
 }
 
+// Function to link Telegram
+async function linkTelegram() {
+    const btn = document.getElementById('botNotificationBtn');
+    if (!btn) return;
 
-
-// Withdraw Toggle
-const showWithdrawBtn = document.getElementById('showWithdrawBtn');
-const cancelWithdrawBtn = document.getElementById('cancelWithdrawBtn');
-const withdrawSection = document.getElementById('withdrawSection');
-
-if (showWithdrawBtn) {
-    showWithdrawBtn.addEventListener('click', () => {
-        withdrawSection.classList.remove('hidden');
-        showWithdrawBtn.classList.add('hidden');
-    });
-}
-
-if (cancelWithdrawBtn) {
-    cancelWithdrawBtn.addEventListener('click', () => {
-        withdrawSection.classList.add('hidden');
-        showWithdrawBtn.classList.remove('hidden');
-    });
-}
-
-// Bot Notification Button Handler
-const botNotificationBtn = document.getElementById('botNotificationBtn');
-if (botNotificationBtn) {
-    botNotificationBtn.addEventListener('click', async () => {
-        // Disable button and show loading state
-        botNotificationBtn.disabled = true;
-        const originalText = botNotificationBtn.innerHTML;
-        botNotificationBtn.innerHTML = '⏳ Loading...';
-
-        try {
-            const response = await fetch(`${API_URL}/wallet/link-telegram`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.telegramLink) {
-                // Redirect to Telegram
-                window.open(data.telegramLink, '_blank');
-
-                // Fallback instructions in case deep link fails
-                setTimeout(() => {
-                    const command = `/start ${data.token}`;
-                    prompt(
-                        "If the Telegram app didn't open correctly, copy and send this command to the bot manually:",
-                        command
-                    );
-                }, 1000);
-
-            } else {
-                showAlert(data.message || 'Failed to generate Telegram link');
-            }
-        } catch (error) {
-            console.error('Bot link error:', error);
-            showAlert('Network error. Please try again.');
-        } finally {
-            // Restore button state
-            setTimeout(() => {
-                botNotificationBtn.disabled = false;
-                botNotificationBtn.innerHTML = originalText;
-            }, 2000);
-        }
-    });
-}
-
-// Withdraw form submission
-withdrawForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const upiId = document.getElementById('upiId').value.trim();
-
-    if (!upiId) {
-        showAlert('Please enter your UPI ID');
-        return;
-    }
-
-    if (!userData || userData.availableBalance <= 0) {
-        showAlert('Insufficient balance for withdrawal');
-        return;
-    }
-
-    const withdrawBtn = document.getElementById('withdrawBtn');
-    withdrawBtn.disabled = true;
-    withdrawBtn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    btn.disabled = true;
 
     try {
-        const response = await fetch(`${API_URL}/wallet/withdraw`, {
+        const response = await fetch(`${API_URL}/wallet/link-telegram`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include', // Include cookies
-            body: JSON.stringify({ upiId })
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
         });
-
         const data = await response.json();
 
-        if (data.success) {
-            showAlert('Withdrawal request submitted successfully! Your balance has been reset to ₹0.', 'success');
-            document.getElementById('upiId').value = '';
-
-            // Reload data
-            await loadBalance();
-            await loadWithdrawalHistory();
-
-            // Hide form and show button again
-            withdrawSection.classList.add('hidden');
-            showWithdrawBtn.classList.remove('hidden');
-
+        if (data.success && data.telegramLink) {
+            window.open(data.telegramLink, '_blank');
         } else {
-            showAlert(data.message || 'Withdrawal request failed');
+            showAlert(data.message || 'Failed to generate link');
         }
     } catch (error) {
-        console.error('Withdrawal error:', error);
-        showAlert('Network error. Please try again.');
+        console.error(error);
+        showAlert('Network error');
     } finally {
-        withdrawBtn.disabled = false;
-        withdrawBtn.innerHTML = 'Submit Request';
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }, 1000);
     }
-});
+}
 
-// Logout
-logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/auth';
-});
+// Initialize Everything
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Theme
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', toggleTheme);
+    }
+    initTheme();
 
-// Initialize
-loadCampaignConfig();
-loadBalance();
-loadEarningsHistory();
-loadWithdrawalHistory();
+    // Tab Navigation Event Listeners
+    const navButtons = {
+        'nav-home': 'home',
+        'nav-history': 'history',
+        'nav-withdraw': 'withdraw',
+        'nav-account': 'account'
+    };
 
-// Auto-refresh every 30 seconds
-setInterval(() => {
+    Object.keys(navButtons).forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', () => switchTab(navButtons[id]));
+            // Add touchstart for faster mobile response
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent ghost clicks
+                switchTab(navButtons[id]);
+            });
+        }
+    });
+
+    // See All Activity Button
+    const seeAllBtn = document.getElementById('seeAllActivityBtn');
+    if (seeAllBtn) {
+        seeAllBtn.addEventListener('click', () => switchTab('history'));
+    }
+
+    // Determine start tab (default home)
+    switchTab('home');
+
+    // Load Data
     loadBalance();
     loadEarningsHistory();
     loadWithdrawalHistory();
-}, 30000);
+
+    // Event Listeners
+    const botBtn = document.getElementById('botNotificationBtn');
+    if (botBtn) botBtn.addEventListener('click', linkTelegram);
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) logoutBtn.addEventListener('click', () => {
+        window.location.href = '/auth'; // Server clears cookie on this path usually, if not we might need API call
+        // If server doesn't clear on GET /auth, we should ideally POST /api/auth/logout. 
+        // For now relying on existing behavior or standard clear.
+        // Actually, let's clear local storage just in case (though we moved to cookies)
+        localStorage.clear();
+    });
+
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', () => {
+            showAlert('Password change functionality coming soon!', 'info');
+        });
+    }
+
+    // Withdraw Form
+    const withdrawForm = document.getElementById('withdrawForm');
+    if (withdrawForm) {
+        withdrawForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const upiId = document.getElementById('upiId').value.trim();
+            const btn = document.getElementById('withdrawBtn');
+
+            if (!upiId) return showAlert('Please enter UPI ID');
+
+            // UI Loading
+            const originalText = btn.textContent;
+            btn.textContent = 'Processing...';
+            btn.disabled = true;
+            btn.classList.add('opacity-70');
+
+            try {
+                const response = await fetch(`${API_URL}/wallet/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ upiId }),
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Withdrawal submitted!', 'success');
+                    document.getElementById('upiId').value = '';
+                    loadBalance();
+                    loadWithdrawalHistory();
+                    switchTab('withdraw'); // Ensure we are on withdraw tab/keep there
+                } else {
+                    showAlert(data.message || 'Withdrawal failed');
+                }
+            } catch (error) {
+                showAlert('Network error');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-70');
+            }
+        });
+    }
+});

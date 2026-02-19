@@ -28,6 +28,16 @@ module.exports = {
             isActive: true,
 
             // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
+            process: [
+                "Register with your Mobile Number",
+                "Install the Story Max App",
+                "Register & Complete Trial Purchase",
+                "Cashback will be added to wallet"
+            ],
+
+            // ----------------------------------------
             // 🔗 AFFILIATE LINK CONFIGURATION
             // ----------------------------------------
             affiliate: {
@@ -149,6 +159,16 @@ module.exports = {
 
             // Campaign status
             isActive: true,
+
+            // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
+            process: [
+                "Register with your Mobile Number",
+                "Install the Incred App",
+                "Purchase Gold for ₹11",
+                "Get ₹13 Cashback in Wallet"
+            ],
 
             // ----------------------------------------
             // 🔗 AFFILIATE LINK CONFIGURATION
@@ -273,6 +293,16 @@ module.exports = {
             isActive: true,
 
             // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
+            process: [
+                "Register with your Mobile Number",
+                "Install the Waves App",
+                "Complete Registration",
+                "Cashback will be added to wallet"
+            ],
+
+            // ----------------------------------------
             // 🔗 AFFILIATE LINK CONFIGURATION
             // ----------------------------------------
             affiliate: {
@@ -388,6 +418,16 @@ module.exports = {
 
             // Campaign status
             isActive: true,
+
+            // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
+            process: [
+                "Register with your Mobile Number",
+                "Install the Story TV App",
+                "Register & Complete Trial Purchase",
+                "Cashback will be added to wallet"
+            ],
 
             // ----------------------------------------
             // 🔗 AFFILIATE LINK CONFIGURATION
@@ -514,6 +554,16 @@ module.exports = {
             isActive: true,
 
             // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
+            process: [
+                "Register with your Mobile Number",
+                "Install the Story TV App",
+                "Register & Complete Trial Purchase",
+                "Cashback will be added to wallet"
+            ],
+
+            // ----------------------------------------
             // 🔗 AFFILIATE LINK CONFIGURATION
             // ----------------------------------------
             affiliate: {
@@ -637,6 +687,19 @@ module.exports = {
             isActive: true,
 
             // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
+            process: [
+                "Enter  your Mobile Number and click on proceed",
+                "Install the Story TV App",
+                "Wait for the install tracking message from the telegram bot",
+                "After successful tracking of install enter the number and otp and buy the 1RS trial purchase",
+                "Wait for the trail tracking message from the telegram bot",
+                "Cashback will be added to wallet",
+                "Repeat the process after deleting the advertising id and the toggling the areoplane mode"
+            ],
+
+            // ----------------------------------------
             // 🔗 AFFILIATE LINK CONFIGURATION
             // ----------------------------------------
             affiliate: {
@@ -756,6 +819,19 @@ module.exports = {
 
             // Campaign status
             isActive: true,
+
+            // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
+            process: [
+                "Enter  your Mobile Number and click on proceed",
+                "Install the Story TV App",
+                "Wait for the install tracking message from the telegram bot",
+                "After successful tracking of install enter the number and otp and buy the 1RS trial purchase",
+                "Wait for the trail tracking message from the telegram bot",
+                "Cashback will be added to wallet",
+                "Repeat the process after deleting the advertising id and the toggling the areoplane mode"
+            ],
 
             // ----------------------------------------
             // 🔗 AFFILIATE LINK CONFIGURATION
