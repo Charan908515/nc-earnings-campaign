@@ -7,86 +7,287 @@
   <title>NC Earnings Campaign - Register & Earn</title>
   <link rel="icon" type="image/jpeg" href="/images/logo.jpg">
   <link rel="apple-touch-icon" href="/images/logo.jpg">
-  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              light: '#ff8c5a',
+              DEFAULT: '#ff6b35',
+              dark: '#f97316'
+            },
+            secondary: {
+              light: '#ffa366',
+              DEFAULT: '#ea580c',
+              dark: '#c2410c'
+            },
+            dark: {
+              bg: '#121212',
+              card: '#1e1e1e',
+              text: '#e0e0e0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+            heading: ['Plus Jakarta Sans', 'ui-sans-serif']
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #fcece4 0%, #fff7ed 100%);
+    }
+
+    .dark .gradient-bg {
+      background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+    }
+
+    .input-focus:focus {
+      box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+    }
+  </style>
 </head>
 
-<body>
-  <div class="auth-container">
-    <div class="auth-card fade-in">
-      <div class="auth-header">
-        <h1 class="logo">NC Earnings</h1>
-        <h2 class="auth-title" id="authTitle">Create Account</h2>
-        <p class="auth-subtitle" id="authSubtitle">Join and start earning today</p>
-      </div>
+<body
+  class="font-sans text-gray-800 dark:text-gray-200 antialiased min-h-screen gradient-bg transition-colors duration-300 flex items-center justify-center p-4">
 
-      <div id="alertContainer"></div>
+  <!-- Theme Toggle -->
+  <button id="themeToggleBtn"
+    class="fixed top-4 right-4 z-50 w-10 h-10 bg-white dark:bg-dark-card rounded-full shadow-md flex items-center justify-center text-gray-500 hover:text-primary transition-colors border border-gray-100 dark:border-gray-700">
+    <i class="fas fa-moon"></i>
+  </button>
 
-      <!-- Registration Form -->
-      <form id="registerForm">
-        <div class="form-group">
-          <label class="form-label" for="regMobile">UPI ID</label>
-          <input type="text" id="regMobile" class="form-input" placeholder="Enter UPI ID (e.g., 9876543210@paytm)"
-            maxlength="50" pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
-        </div>
+  <div class="w-full max-w-md">
+    <!-- Main Card -->
+    <div
+      class="bg-white dark:bg-dark-card rounded-3xl shadow-xl overflow-hidden border border-white/50 dark:border-gray-700 relative transition-colors duration-300">
+      <!-- Header Pattern -->
+      <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-secondary"></div>
 
-        <div class="form-group">
-          <label class="form-label" for="regPassword">Password</label>
-          <div class="password-wrapper">
-            <input type="password" id="regPassword" class="form-input" placeholder="Create a strong password"
-              minlength="6" required>
-            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
-              👁️
-            </button>
+      <div class="p-8 pt-10 text-center">
+        <!-- Global Brand Heading with Logo -->
+        <div class="flex items-center justify-center gap-3 mb-8">
+          <div class="w-10 h-10 rounded-full overflow-hidden shadow-md">
+            <img src="/images/logo.jpg" alt="NC Campaigns Logo" class="w-full h-full object-cover">
           </div>
+          <span class="text-lg font-bold text-gray-700 dark:text-gray-200 tracking-wide">
+            NC Campaigns
+          </span>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="regConfirmPassword">Confirm Password</label>
-          <div class="password-wrapper">
-            <input type="password" id="regConfirmPassword" class="form-input" placeholder="Re-enter your password"
-              minlength="6" required>
-            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
-              👁️
-            </button>
+        <!-- Logo -->
+        <h1
+          class="text-3xl font-heading font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary mb-2 tracking-tight">
+          NC Earnings
+        </h1>
+
+        <h2 id="authTitle" class="text-xl font-bold text-gray-800 dark:text-white mb-2">
+          Create Account
+        </h2>
+
+        <p id="authSubtitle" class="text-gray-500 dark:text-gray-400 text-sm mb-8 font-medium">
+          Join and start earning today
+        </p>
+
+        <!-- Alert Container -->
+        <div id="alertContainer" class="mb-6 empty:hidden"></div>
+
+        <!-- Registration Form -->
+        <form id="registerForm" class="space-y-4 text-left">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              for="regMobile">UPI ID</label>
+            <div class="relative">
+              <input type="text" id="regMobile"
+                class="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl py-3.5 px-4 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary input-focus transition-all font-medium text-base"
+                placeholder="Enter UPI ID (e.g., 9876543210@paytm)" maxlength="50"
+                pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
+            </div>
           </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
-          <span>Create Account</span>
-        </button>
-      </form>
-
-      <!-- Login Form -->
-      <form id="loginForm" class="hidden">
-        <div class="form-group">
-          <label class="form-label" for="loginMobile">UPI ID</label>
-          <input type="text" id="loginMobile" class="form-input" placeholder="Enter your UPI ID" maxlength="50"
-            pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="loginPassword">Password</label>
-          <div class="password-wrapper">
-            <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" required>
-            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
-              👁️
-            </button>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              for="regPassword">Password</label>
+            <div class="relative">
+              <input type="password" id="regPassword"
+                class="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl py-3.5 px-4 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary input-focus transition-all font-medium text-base pr-10"
+                placeholder="Create a strong password" minlength="6" required>
+              <button type="button"
+                class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
           </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              for="regConfirmPassword">Confirm Password</label>
+            <div class="relative">
+              <input type="password" id="regConfirmPassword"
+                class="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl py-3.5 px-4 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary input-focus transition-all font-medium text-base pr-10"
+                placeholder="Re-enter your password" minlength="6" required>
+              <button type="button"
+                class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="registerBtn"
+            class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 group mt-6">
+            <span>Create Account</span>
+            <i class="fas fa-user-plus group-hover:translate-x-1 transition-transform"></i>
+          </button>
+        </form>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="hidden space-y-4 text-left">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              for="loginMobile">UPI ID</label>
+            <div class="relative">
+              <input type="text" id="loginMobile"
+                class="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl py-3.5 px-4 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary input-focus transition-all font-medium text-base"
+                placeholder="Enter your UPI ID" maxlength="50" pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              for="loginPassword">Password</label>
+            <div class="relative">
+              <input type="password" id="loginPassword"
+                class="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl py-3.5 px-4 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary input-focus transition-all font-medium text-base pr-10"
+                placeholder="Enter your password" required>
+              <button type="button"
+                class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="loginBtn"
+            class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 group mt-6">
+            <span>Login</span>
+            <i class="fas fa-sign-in-alt group-hover:translate-x-1 transition-transform"></i>
+          </button>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/50">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            <span id="toggleText">Already have an account?</span>
+            <a href="#" id="toggleLink"
+              class="font-bold text-primary hover:text-primary-dark transition-colors ml-1">Login</a>
+          </p>
         </div>
-
-        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
-          <span>Login</span>
-        </button>
-      </form>
-
-      <div class="auth-toggle">
-        <span id="toggleText">Already have an account?</span>
-        <a href="#" id="toggleLink">Login</a>
       </div>
     </div>
+
+    <!-- Footer Branding -->
+    <p class="text-center text-xs text-gray-400 mt-6 dark:text-gray-600">
+      Powered by NC Campaigns
+    </p>
   </div>
 
+  <script>
+    // Theme Logic
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+
+    function updateThemeIcon(isDark) {
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) {
+        btn.innerHTML = isDark ? '<i class="fas fa-sun text-yellow-300"></i>' : '<i class="fas fa-moon"></i>';
+      }
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcon(true);
+      } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcon(false);
+      }
+    }
+
+    document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+    initTheme();
+  </script>
   <script src="/js/auth.js"></script>
+  <script>
+    // Override the auth.js showAlert to act nicely with new UI if needed, 
+    // essentially matching styling of campaign.html alerts
+    const originalShowAlert = window.showAlert;
+    // logic for alerts is handled in auth.js using 'alert-success' / 'alert-error' classes
+    // Those classes were in css/style.css. We need to add them inline or in head styles if we want to rely on existing auth.js
+    // OR we can inject a script to redefine showAlert to use Tailwind.
+
+    // Redefining showAlert to use Tailwind
+    window.showAlert = function (message, type = 'error') {
+      const alertContainer = document.getElementById('alertContainer');
+      const colorClass = type === 'success' ? 'bg-green-50 border-green-200 text-green-600' :
+        'bg-red-50 border-red-200 text-red-600';
+      const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+      alertContainer.innerHTML = `
+                <div class="flex items-center p-4 rounded-xl border ${colorClass} animate-pulse-slow">
+                    <i class="fas ${icon} text-lg mr-3 opacity-80"></i>
+                    <span class="font-medium text-sm">${message}</span>
+                </div>
+            `;
+      setTimeout(() => {
+        alertContainer.innerHTML = '';
+      }, 5000);
+    }
+
+    // Also update the password toggle logic to work with FontAwesome icons if needed
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.toggle-password').forEach(button => {
+        // Remove old event listeners by cloning
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+
+        newButton.addEventListener('click', function (e) {
+          e.preventDefault();
+          const input = this.parentElement.querySelector('input');
+          const icon = this.querySelector('i');
+
+          if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+            this.classList.add('text-primary');
+          } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+            this.classList.remove('text-primary');
+          }
+        });
+      });
+    });
+  </script>
 </body>
 
 </html>
