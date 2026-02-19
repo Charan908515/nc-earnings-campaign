@@ -787,12 +787,12 @@ module.exports = {
             // ----------------------------------------
             events: {
                 install: {
-                    identifiers: ['Initial'],
+                    identifiers: ['Default'],
                     displayName: 'Install Tracked',
                     amount: 0
                 },
                 trail: {
-                    identifiers: ['dep'],
+                    identifiers: ['Trial'],
                     displayName: 'Trail Tracked',
                     amount: 25
                 }
