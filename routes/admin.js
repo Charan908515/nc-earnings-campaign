@@ -16,11 +16,11 @@ router.post('/login', async (req, res) => {
 
     // Validate credentials
     if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-      // Generate JWT token with admin role
+      // Generate JWT token with admin role - Long expiry (30 days)
       const token = jwt.sign(
         { role: 'admin', username },
         process.env.JWT_SECRET,
-        { expiresIn: '2h' } // Short expiration for admin sessions
+        { expiresIn: '30d' }
       );
 
       // Set token as HTTP-only cookie
@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 2 * 60 * 60 * 1000 // 2 hours in milliseconds
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       });
 
       res.json({
