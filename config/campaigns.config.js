@@ -686,9 +686,6 @@ module.exports = {
             // Campaign status
             isActive: true,
 
-            // ----------------------------------------
-            // 📝 CAMPAIGN PROCESS
-            // ----------------------------------------
             process: [
                 "Enter  your Mobile Number and click on proceed",
                 "Install the Story TV App",
@@ -699,9 +696,6 @@ module.exports = {
                 "Repeat the process after deleting the advertising id and the toggling the areoplane mode"
             ],
 
-            // ----------------------------------------
-            // 🔗 AFFILIATE LINK CONFIGURATION
-            // ----------------------------------------
             affiliate: {
                 baseUrl: 'https://Cashpayout-ads.gotracking.in/click/',
                 offerId: 67,

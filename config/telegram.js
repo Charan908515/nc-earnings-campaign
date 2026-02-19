@@ -71,10 +71,28 @@ function initializeBots() {
 function setupUserBotCommands() {
     const { campaign, telegram } = campaignConfig;
 
+    // DEBUG: Log Bot Identity on Startup
+    userBot.getMe().then((me) => {
+        console.log(`\n🤖 ==================================================`);
+        console.log(`✅ BOT IDENTITY CONFIRMED: @${me.username}`);
+        console.log(`🆔 Bot ID: ${me.id}`);
+        console.log(`==================================================\n`);
+    }).catch((err) => {
+        console.error('❌ FATAL: Could not verify bot identity. Token may be invalid.', err.message);
+    });
+
+    // DEBUG: Global Message Listener (Catch-all)
+    userBot.on('message', (msg) => {
+        const username = msg.from.username ? `@${msg.from.username}` : msg.from.first_name;
+        console.log(`📨 [DEBUG] Message received from ${username} (${msg.chat.id}): "${msg.text}"`);
+    });
+
     // /start command - Register UPI ID or Verify Token
     userBot.onText(/\/start(.*)/, async (msg, match) => {
         const chatId = msg.chat.id;
         const input = match[1]?.trim();
+
+        console.log(`🤖 Bot received /start from ${chatId}. Input: '${input}'`);
 
         // SCENARIO 1: No input - Show instructions
         if (!input) {
@@ -101,16 +119,19 @@ Or manually register:
         // SCENARIO 2: Input is a UUID (Token Verification)
         // UUID regex (approximate)
         if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input)) {
+            console.log(`🔑 verifying token: ${input}`);
             try {
                 const verification = await TelegramVerification.findOne({ token: input });
 
                 if (!verification) {
+                    console.warn(`❌ Verification failed: Token ${input} not found or expired.`);
                     await userBot.sendMessage(chatId, '❌ Invalid or expired verification link. Please generate a new one from your wallet.');
                     return;
                 }
 
                 // Register user
                 const upiId = verification.upiId;
+                console.log(`✅ Token verified. Registering UPI: ${upiId} for Chat: ${chatId}`);
 
                 // Handle Account Switching: Remove this UPI from any OTHER chat IDs
                 await TelegramUser.deleteMany({
@@ -124,12 +145,14 @@ Or manually register:
                     user.phone_number = upiId;
                     user.notifications_enabled = true;
                     await user.save();
+                    console.log(`🔄 Updated existing user ${chatId} with new UPI ${upiId}`);
                 } else {
                     user = await TelegramUser.create({
                         chat_id: chatId.toString(),
                         phone_number: upiId,
                         notifications_enabled: true
                     });
+                    console.log(`✨ Created new user ${chatId} with UPI ${upiId}`);
                 }
 
                 // Delete used token
@@ -155,7 +178,9 @@ Your UPI ID: <code>${upiId}</code>
         }
 
         // SCENARIO 3: Input is a UPI ID (Manual Registration - Backward Compatibility)
-        if (/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(input)) {
+        // Relaxed regex to allow numbers in the bank handle part
+        if (/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z0-9]{2,}$/.test(input)) {
+            console.log(`📝 Manual registration attempt with UPI: ${input}`);
             try {
                 // Handle Account Switching: Remove this UPI from any OTHER chat IDs
                 await TelegramUser.deleteMany({
@@ -171,6 +196,7 @@ Your UPI ID: <code>${upiId}</code>
                         user.registered_at = new Date();
                         user.notifications_enabled = true;
                         await user.save();
+                        console.log(`🔄 Manual Update: User ${chatId} switched to ${input}`);
                         await userBot.sendMessage(
                             chatId,
                             `✅ <b>UPI ID Updated!</b>
@@ -181,6 +207,7 @@ Your new UPI ID: <code>${input}</code>
                             { parse_mode: 'HTML', disable_web_page_preview: true }
                         );
                     } else {
+                        console.log(`ℹ️ Manual: User ${chatId} already registered with ${input}`);
                         await userBot.sendMessage(
                             chatId,
                             `ℹ️ You're already registered with UPI ID: <code>${input}</code>`,
@@ -193,6 +220,7 @@ Your new UPI ID: <code>${input}</code>
                         phone_number: input,
                         notifications_enabled: true
                     });
+                    console.log(`✨ Manual Create: New user ${chatId} with ${input}`);
 
                     await userBot.sendMessage(
                         chatId,
@@ -215,6 +243,7 @@ Your UPI ID: <code>${input}</code>
         }
 
         // SCENARIO 4: Invalid Input
+        console.warn(`⚠️ Invalid input received from ${chatId}: ${input}`);
         await userBot.sendMessage(
             chatId,
             '❌ Invalid format. Please use the link from your wallet or enter a valid UPI ID.\n\nExample: <code>/start 9876543210@paytm</code>',
