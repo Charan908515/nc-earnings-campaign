@@ -630,7 +630,7 @@ module.exports = {
         {
             id: 'story-tv-cashpayout id 5',
             slug: 'story-tv-2',
-            name: 'STORY TV Campaign cashout',
+            name: 'STORY TV Campaign cashout id 5',
             description: 'Welcome to Story tv Campaign',
 
             // Campaign status
@@ -751,7 +751,7 @@ module.exports = {
         {
             id: 'story-tv-cashpayout id 9',
             slug: 'story-tv-3',
-            name: 'STORY TV Campaign cashout',
+            name: 'STORY TV Campaign cashout id 9',
             description: 'Welcome to Story tv Campaign',
 
             // Campaign status
