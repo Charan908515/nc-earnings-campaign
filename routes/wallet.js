@@ -136,37 +136,35 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
             });
         }
 
-        // SECURITY CHECK 5: Minimum withdrawal amount (redundant with check 4, but kept for clarity if logic changes)
-        const MIN_WITHDRAWAL = 30; // Minimum ₹30
-        if (user.availableBalance < MIN_WITHDRAWAL) {
-            return res.status(400).json({
-                success: false,
-                message: `Minimum withdrawal amount is ₹${MIN_WITHDRAWAL}`
-            });
+        // Parse and validate requested amount
+        let amountToWithdraw = parseFloat(amount);
+
+        if (!amountToWithdraw || isNaN(amountToWithdraw)) {
+            return res.status(400).json({ success: false, message: 'Invalid withdrawal amount' });
         }
 
-        // SECURITY CHECK 6: If amount is provided, validate it matches available balance
-        if (amount !== undefined && amount !== user.availableBalance) {
-            console.log(`⚠️ Withdrawal amount mismatch: requested ${amount}, available ${user.availableBalance}`);
-            return res.status(400).json({
-                success: false,
-                message: 'Withdrawal amount does not match available balance'
-            });
+        if (amountToWithdraw < 30) {
+            return res.status(400).json({ success: false, message: 'Minimum withdrawal amount is ₹30' });
         }
 
-        // Store the withdrawal amount before resetting balance
-        const withdrawalAmount = user.availableBalance;
+        if (amountToWithdraw > user.availableBalance) {
+            return res.status(400).json({ success: false, message: 'Insufficient balance' });
+        }
+
+        // Deduct the requested amount
+        const previousBalance = user.availableBalance;
+        const newBalance = previousBalance - amountToWithdraw;
 
         // SECURITY CHECK 7: Use atomic operation to prevent race conditions
         const updateResult = await User.findOneAndUpdate(
             {
                 _id: user._id,
-                availableBalance: withdrawalAmount // Ensure balance hasn't changed
+                availableBalance: previousBalance // Ensure balance hasn't changed
             },
             {
-                $set: { availableBalance: 0 }
+                $inc: { availableBalance: -amountToWithdraw }
             },
-            { new: false } // Return old document to verify
+            { new: true }
         );
 
         if (!updateResult) {
@@ -181,25 +179,25 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
         const withdrawal = new Withdrawal({
             userId: user._id,
             mobileNumber: user.mobileNumber,
-            amount: withdrawalAmount,
+            amount: amountToWithdraw,
             upiId: upiId.trim(),
             status: 'pending'
         });
 
         await withdrawal.save();
 
-        console.log(`💰 Withdrawal request created: ₹${withdrawalAmount} for ${user.mobileNumber} to ${upiId.trim()}`);
+        console.log(`💰 Withdrawal request created: ₹${amountToWithdraw} for ${user.mobileNumber} to ${upiId.trim()}`);
 
         res.json({
             success: true,
-            message: 'Withdrawal request submitted successfully. Your balance has been reset to ₹0.',
+            message: 'Withdrawal request submitted successfully.',
             data: {
                 withdrawalId: withdrawal._id,
                 amount: withdrawal.amount,
                 status: withdrawal.status,
                 upiId: withdrawal.upiId,
-                previousBalance: withdrawalAmount,
-                newBalance: 0
+                previousBalance: previousBalance,
+                newBalance: newBalance
             }
         });
     } catch (error) {

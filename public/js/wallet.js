@@ -140,8 +140,10 @@ async function loadBalance() {
             document.getElementById('availableBalance').textContent = balanceFormatted;
             document.getElementById('withdrawPageBalance').textContent = balanceFormatted;
             document.getElementById('totalEarned').textContent = totalEarnedFormatted;
-            const withdrawInput = document.getElementById('withdrawAmountInput');
-            if (withdrawInput) withdrawInput.value = data.data.availableBalance;
+
+            // Do not auto-fill withdraw input to allow user editing
+            // const withdrawInput = document.getElementById('withdrawAmountInput');
+            // if (withdrawInput) withdrawInput.value = data.data.availableBalance;
 
             // Update Profile Info
             const userNameEl = document.getElementById('userName');
@@ -510,8 +512,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!upiId) return showAlert('Please enter UPI ID');
 
             // Check if amount is valid
-            if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-                return showAlert('No balance available to withdraw');
+            const amount = parseFloat(withdrawAmount);
+            if (!amount || isNaN(amount) || amount <= 0) {
+                return showAlert('Please enter a valid amount');
+            }
+
+            if (amount < 30) {
+                return showAlert('Minimum withdrawal amount is ₹30');
+            }
+
+            // Optional: Check client-side balance (though server does it too)
+            const currentBalance = parseFloat(document.getElementById('availableBalance').textContent.replace(/,/g, ''));
+            if (amount > currentBalance) {
+                return showAlert('Insufficient balance');
             }
 
             // UI Loading
@@ -524,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${API_URL}/wallet/withdraw`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ upiId, amount: parseFloat(withdrawAmount) }), // Send confirmed amount
+                    body: JSON.stringify({ upiId, amount }), // Send confirmed amount
                     credentials: 'include'
                 });
                 const data = await response.json();
