@@ -1,5 +1,36 @@
 const API_URL = '/api';
 
+// Helper: Fetch with Auth & Auto-Redirect
+async function fetchAuth(endpoint, options = {}) {
+    // Ensure credentials are included
+    if (!options.credentials) {
+        options.credentials = 'include';
+    }
+
+    try {
+        const response = await fetch(endpoint, options);
+
+        // Check for Auth Failure
+        if (response.status === 401 || response.status === 403) {
+            console.warn('Session expired. Redirecting to login.');
+            showAlert('Session expired. Please login again.', 'error');
+
+            setTimeout(() => {
+                window.location.href = '/auth';
+            }, 1000);
+
+            // Return a dummy promise that won't resolve to valid data to prevent cascading errors
+            return {
+                json: async () => ({ success: false, message: 'Session expired' })
+            };
+        }
+
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 // Theme Switching
 function toggleTheme() {
     const html = document.documentElement;
@@ -127,7 +158,7 @@ let userData = null;
 // Load user balance & profile
 async function loadBalance() {
     try {
-        const response = await fetch(`${API_URL}/wallet/balance`, { credentials: 'include' });
+        const response = await fetchAuth(`${API_URL}/wallet/balance`, { credentials: 'include' });
         const data = await response.json();
 
         if (data.success) {
@@ -172,7 +203,7 @@ async function loadBalance() {
 // Load Earnings History (Mapped to Transaction History tab)
 async function loadEarningsHistory() {
     try {
-        const response = await fetch(`${API_URL}/wallet/history`, { credentials: 'include' });
+        const response = await fetchAuth(`${API_URL}/wallet/history`, { credentials: 'include' });
         const data = await response.json();
         const listContainer = document.getElementById('transactionHistoryList');
         const recentActivityList = document.getElementById('recentActivityList'); // For Home Tab
@@ -239,7 +270,7 @@ async function loadEarningsHistory() {
 // Load Withdrawal History
 async function loadWithdrawalHistory() {
     try {
-        const response = await fetch(`${API_URL}/wallet/withdrawals`, { credentials: 'include' });
+        const response = await fetchAuth(`${API_URL}/wallet/withdrawals`, { credentials: 'include' });
         const data = await response.json();
         const listContainer = document.getElementById('withdrawHistoryList');
 
@@ -299,7 +330,7 @@ async function linkTelegram() {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`${API_URL}/wallet/link-telegram`, {
+        const response = await fetchAuth(`${API_URL}/wallet/link-telegram`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include'
@@ -444,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveBtn.disabled = true;
 
                 try {
-                    const response = await fetch(`${API_URL}/wallet/change-password`, {
+                    const response = await fetchAuth(`${API_URL}/wallet/change-password`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ currentPassword, newPassword }),
@@ -478,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (newName && newName.trim() !== '' && newName !== currentName) {
                 try {
-                    const response = await fetch(`${API_URL}/wallet/update-profile`, {
+                    const response = await fetchAuth(`${API_URL}/wallet/update-profile`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: newName }),
@@ -534,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.add('opacity-70');
 
             try {
-                const response = await fetch(`${API_URL}/wallet/withdraw`, {
+                const response = await fetchAuth(`${API_URL}/wallet/withdraw`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ upiId, amount }), // Send confirmed amount

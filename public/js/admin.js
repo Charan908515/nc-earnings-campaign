@@ -414,10 +414,14 @@ function renderUsers(users) {
                 </span>
             </td>
             <td>
-                ${user.isSuspended
-            ? `<button class="btn btn-success user-toggle-btn" data-user-id="${user._id}" data-action="unsuspend" style="padding:6px 12px;font-size:13px;">Activate</button>`
-            : `<button class="btn btn-danger user-toggle-btn" data-user-id="${user._id}" data-action="suspend" style="padding:6px 12px;font-size:13px;">Suspend</button>`
+                <div style="display: flex; gap: 5px;">
+                    ${user.isSuspended
+            ? `<button class="btn btn-success user-toggle-btn" data-user-id="${user._id}" data-action="unsuspend" style="padding:6px 12px;font-size:12px;">Activate</button>`
+            : `<button class="btn btn-danger user-toggle-btn" data-user-id="${user._id}" data-action="suspend" style="padding:6px 12px;font-size:12px;">Suspend</button>`
         }
+                    <button class="btn btn-info edit-balance-btn" data-user-id="${user._id}" data-balance="${user.availableBalance}" style="padding:6px 12px;font-size:12px;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer;">Edit Bal</button>
+                    <button class="btn btn-danger delete-user-btn" data-user-id="${user._id}" style="padding:6px 12px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;">Delete</button>
+                </div>
             </td>
         </tr>
     `).join('');
@@ -439,6 +443,110 @@ async function toggleUserStatus(userId, action) {
     } catch (error) {
         console.error('User toggle error:', error);
         showAlert('Failed to update user status');
+    }
+}
+
+// ---------------------------------------------
+// USER EDIT/DELETE LOGIC
+// ---------------------------------------------
+let currentUserToEdit = null;
+const editBalanceModal = document.getElementById('editBalanceModal');
+const newBalanceInput = document.getElementById('newBalanceInput');
+const saveBalanceBtn = document.getElementById('saveBalanceBtn');
+const cancelBalanceEditBtn = document.getElementById('cancelBalanceEditBtn');
+
+// Event Delegation for All Admin Actions
+document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-balance-btn');
+    const deleteBtn = e.target.closest('.delete-user-btn');
+    const saveBtn = e.target.closest('#saveBalanceBtn');
+    const cancelBtn = e.target.closest('#cancelBalanceEditBtn');
+
+    if (editBtn) {
+        const userId = editBtn.dataset.userId;
+        const currentBalance = editBtn.dataset.balance;
+        openEditBalanceModal(userId, currentBalance);
+    }
+    else if (deleteBtn) {
+        const userId = deleteBtn.dataset.userId;
+        deleteUser(userId);
+    }
+    else if (saveBtn) {
+        e.preventDefault();
+        saveUserBalance(saveBtn);
+    }
+    else if (cancelBtn) {
+        closeEditBalanceModal();
+    }
+});
+
+function openEditBalanceModal(userId, currentBalance) {
+    currentUserToEdit = userId;
+    newBalanceInput.value = currentBalance;
+    editBalanceModal.classList.remove('hidden');
+    editBalanceModal.style.display = 'flex';
+}
+
+function closeEditBalanceModal() {
+    currentUserToEdit = null;
+    editBalanceModal.classList.add('hidden');
+    editBalanceModal.style.display = 'none';
+}
+
+async function saveUserBalance(btn) {
+    if (!currentUserToEdit) {
+        return showAlert('No user selected');
+    }
+
+    const val = document.getElementById('newBalanceInput').value;
+    const newBalance = parseFloat(val);
+
+    if (isNaN(newBalance)) return showAlert('Invalid amount');
+
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+        const res = await fetchAuth(`/users/${currentUserToEdit}/balance`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newBalance })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showAlert('Balance updated!', 'success');
+            closeEditBalanceModal();
+            loadUsers();
+        } else {
+            showAlert(data.message);
+        }
+    } catch (e) {
+        console.error(e);
+        showAlert('Error updating balance');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this user? This action cannot be undone.')) return;
+
+    try {
+        const res = await fetchAuth(`/users/${userId}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+            showAlert('User deleted successfully', 'success');
+            loadUsers();
+        } else {
+            showAlert(data.message);
+        }
+    } catch (error) {
+        console.error('Delete user error:', error);
+        showAlert('Failed to delete user');
     }
 }
 

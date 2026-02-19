@@ -346,6 +346,16 @@ router.get('/users', adminMiddleware, async (req, res) => {
   }
 });
 
+// Unsuspend user
+router.post('/users/:id/unsuspend', adminMiddleware, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.params.id, { isSuspended: false });
+    res.json({ success: true, message: 'User activated successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Suspend user
 router.post('/users/:id/suspend', adminMiddleware, async (req, res) => {
   try {
@@ -356,12 +366,38 @@ router.post('/users/:id/suspend', adminMiddleware, async (req, res) => {
   }
 });
 
-// Unsuspend user
-router.post('/users/:id/unsuspend', adminMiddleware, async (req, res) => {
+// Delete user
+router.delete('/users/:id', adminMiddleware, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.params.id, { isSuspended: false });
-    res.json({ success: true, message: 'User activated successfully' });
+    // Optional: Check if user has pending withdrawals?
+    // For now, simple delete
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Update user balance
+router.post('/users/:id/balance', adminMiddleware, async (req, res) => {
+  try {
+    const { newBalance } = req.body;
+
+    if (typeof newBalance !== 'number') {
+      return res.status(400).json({ success: false, message: 'Invalid balance amount' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.availableBalance = newBalance;
+    await user.save();
+
+    res.json({ success: true, message: 'Balance updated successfully' });
+  } catch (error) {
+    console.error('Update balance error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

@@ -92,10 +92,11 @@ router.post('/register', async (req, res) => {
         console.log('='.repeat(60) + '\n');
 
         // Generate JWT token with longer expiration
+        // Generate JWT token with longer expiration (30 days)
         const token = jwt.sign(
             { userId: user._id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' } // 24 hours
+            { expiresIn: '30d' } // 30 days
         );
 
         // Set token as HTTP-only cookie
@@ -103,7 +104,7 @@ router.post('/register', async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // HTTPS only in production
             sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
         });
 
         res.status(201).json({
@@ -162,10 +163,11 @@ router.post('/login', async (req, res) => {
         }
 
         // Generate JWT token with longer expiration
+        // Generate JWT token with longer expiration (30 days)
         const token = jwt.sign(
             { userId: user._id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' } // 24 hours
+            { expiresIn: '30d' } // 30 days
         );
 
         // Set token as HTTP-only cookie
@@ -173,7 +175,7 @@ router.post('/login', async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // HTTPS only in production
             sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
         });
 
         res.json({

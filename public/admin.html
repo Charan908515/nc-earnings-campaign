@@ -290,6 +290,27 @@
         </main>
     </div>
 
+    <!-- Edit Balance Modal -->
+    <div id="editBalanceModal" class="modal hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; display: none;">
+        <div class="modal-content"
+            style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 18px; font-weight: 700;">Edit User Balance</h3>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="newBalanceInput" style="display: block; margin-bottom: 8px; font-weight: 500;">New Balance
+                    (₹)</label>
+                <input type="number" id="newBalanceInput" class="form-control" placeholder="Enter amount" step="0.01"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" id="cancelBalanceEditBtn"
+                    style="padding: 8px 16px; border: 1px solid #ddd; background: #f8f9fa; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveBalanceBtn"
+                    style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/admin.js"></script>
 </body>
 
