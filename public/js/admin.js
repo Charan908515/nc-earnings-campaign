@@ -1,3 +1,4 @@
+console.log('✅ admin.js v2 loaded');
 // Toast alert utility
 function showAlert(message, type = 'error') {
     const toast = document.createElement('div');
@@ -119,41 +120,90 @@ function showSection(sectionId) {
     window.scrollTo(0, 0);
 }
 
-// Event Delegation for User Management Buttons
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('user-toggle-btn')) {
-        const userId = e.target.dataset.userId;
-        const action = e.target.dataset.action;
-        toggleUserStatus(userId, action);
-    }
-});
+// ---------------------------------------------
+// UNIFIED EVENT HANDLING
+// ---------------------------------------------
 
-// Event Delegation for Campaign Management Buttons
 document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('campaign-toggle-btn')) {
-        const slug = e.target.dataset.slug;
-        const isActive = e.target.dataset.active === 'true';
-        toggleCampaign(slug, isActive);
-    }
-});
+    // DEBUG: Alert on click to verify handler is active
+    // console.log('Click:', e.target); 
 
-// Event Delegation for Withdrawal Buttons
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('approve-withdrawal-btn')) {
-        const id = e.target.dataset.withdrawalId;
-        approveWithdrawal(id);
-    } else if (e.target.classList.contains('reject-withdrawal-btn')) {
-        const id = e.target.dataset.withdrawalId;
-        rejectWithdrawal(id);
-    }
-});
+    // 1. User Management Actions
+    const userToggleBtn = e.target.closest('.user-toggle-btn');
+    const editBalanceBtn = e.target.closest('.edit-balance-btn');
+    const deleteUserBtn = e.target.closest('.delete-user-btn');
 
-// Event Delegation for Logs Pagination
-document.addEventListener('click', (e) => {
-    if (e.target.id === 'prevLogs') {
+    if (editBalanceBtn) {
+        e.preventDefault();
+        const userId = editBalanceBtn.dataset.userId;
+        const currentBalance = editBalanceBtn.dataset.balance;
+        if (userId) handleEditBalance(userId, currentBalance);
+    }
+    else if (deleteUserBtn) {
+        e.preventDefault();
+        const userId = deleteUserBtn.dataset.userId;
+        if (userId) deleteUser(userId);
+    }
+    else if (userToggleBtn) {
+        e.preventDefault();
+        const userId = userToggleBtn.dataset.userId;
+        const action = userToggleBtn.dataset.action;
+        if (userId && action) toggleUserStatus(userId, action);
+    }
+
+    // 2. Campaign Management Actions
+    const campaignToggleBtn = e.target.closest('.campaign-toggle-btn');
+    if (campaignToggleBtn) {
+        e.preventDefault();
+        const slug = campaignToggleBtn.dataset.slug;
+        const isActive = campaignToggleBtn.dataset.active === 'true';
+        if (slug) toggleCampaign(slug, isActive);
+    }
+
+    // 3. Withdrawal Actions
+    const approveBtn = e.target.closest('.approve-withdrawal-btn');
+    const rejectBtn = e.target.closest('.reject-withdrawal-btn');
+
+    if (approveBtn) {
+        e.preventDefault();
+        const id = approveBtn.dataset.withdrawalId;
+        if (id) approveWithdrawal(id);
+    }
+    else if (rejectBtn) {
+        e.preventDefault();
+        const id = rejectBtn.dataset.withdrawalId;
+        if (id) rejectWithdrawal(id);
+    }
+
+    // 4. Logs Pagination
+    if (e.target.id === 'prevLogs' || e.target.closest('#prevLogs')) {
+        e.preventDefault();
         changeLogsPage(-1);
-    } else if (e.target.id === 'nextLogs') {
+    }
+    else if (e.target.id === 'nextLogs' || e.target.closest('#nextLogs')) {
+        e.preventDefault();
         changeLogsPage(1);
+    }
+
+    // 5. Balance Modal Actions (Deprectated)
+
+    // 6. Dynamic Form Actions (Campaign Modal)
+    const removeStepBtn = e.target.closest('.remove-step-btn');
+    const removeEventBtn = e.target.closest('.remove-event-btn');
+
+    if (removeStepBtn) {
+        e.preventDefault();
+        const row = removeStepBtn.closest('.process-step-row');
+        if (row && document.querySelectorAll('.process-step-row').length > 1) {
+            row.remove();
+        }
+    }
+    else if (removeEventBtn) {
+        e.preventDefault();
+        const row = removeEventBtn.closest('.event-row');
+        if (row && document.querySelectorAll('.event-row').length > 1) {
+            row.remove();
+        }
     }
 });
 
@@ -457,66 +507,21 @@ async function toggleUserStatus(userId, action) {
 // ---------------------------------------------
 // USER EDIT/DELETE LOGIC
 // ---------------------------------------------
-let currentUserToEdit = null;
-const editBalanceModal = document.getElementById('editBalanceModal');
-const newBalanceInput = document.getElementById('newBalanceInput');
-const saveBalanceBtn = document.getElementById('saveBalanceBtn');
-const cancelBalanceEditBtn = document.getElementById('cancelBalanceEditBtn');
 
-// Event Delegation for All Admin Actions
-document.addEventListener('click', (e) => {
-    const editBtn = e.target.closest('.edit-balance-btn');
-    const deleteBtn = e.target.closest('.delete-user-btn');
-    const saveBtn = e.target.closest('#saveBalanceBtn');
-    const cancelBtn = e.target.closest('#cancelBalanceEditBtn');
+// Logic to handle balance edit using native prompt
+async function handleEditBalance(userId, currentBalance) {
+    const input = prompt("Enter new balance for user (₹):", currentBalance);
 
-    if (editBtn) {
-        const userId = editBtn.dataset.userId;
-        const currentBalance = editBtn.dataset.balance;
-        openEditBalanceModal(userId, currentBalance);
+    // User cancelled
+    if (input === null) return;
+
+    const newBalance = parseFloat(input);
+    if (isNaN(newBalance) || newBalance < 0) {
+        return showAlert('Invalid balance amount. Please enter a valid number.');
     }
-    else if (deleteBtn) {
-        const userId = deleteBtn.dataset.userId;
-        deleteUser(userId);
-    }
-    else if (saveBtn) {
-        e.preventDefault();
-        saveUserBalance(saveBtn);
-    }
-    else if (cancelBtn) {
-        closeEditBalanceModal();
-    }
-});
-
-function openEditBalanceModal(userId, currentBalance) {
-    currentUserToEdit = userId;
-    newBalanceInput.value = currentBalance;
-    // Updated for Tailwind hidden class
-    editBalanceModal.classList.remove('hidden');
-}
-
-function closeEditBalanceModal() {
-    currentUserToEdit = null;
-    // Updated for Tailwind hidden class
-    editBalanceModal.classList.add('hidden');
-}
-
-async function saveUserBalance(btn) {
-    if (!currentUserToEdit) {
-        return showAlert('No user selected');
-    }
-
-    const val = document.getElementById('newBalanceInput').value;
-    const newBalance = parseFloat(val);
-
-    if (isNaN(newBalance)) return showAlert('Invalid amount');
-
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
 
     try {
-        const res = await fetchAuth(`/users/${currentUserToEdit}/balance`, {
+        const res = await fetchAuth(`/users/${userId}/balance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ newBalance })
@@ -524,22 +529,19 @@ async function saveUserBalance(btn) {
         const data = await res.json();
 
         if (data.success) {
-            showAlert('Balance updated!', 'success');
-            closeEditBalanceModal();
+            showAlert('Balance updated successfully!', 'success');
             loadUsers();
         } else {
-            showAlert(data.message);
+            showAlert(data.message || 'Failed to update balance');
         }
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        console.error('Balance update error:', error);
         showAlert('Error updating balance');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
     }
 }
 
 async function deleteUser(userId) {
+    console.log('deleteUser called', { userId });
     if (!confirm('Are you sure you want to PERMANENTLY delete this user? This action cannot be undone.')) return;
 
     try {
@@ -782,21 +784,7 @@ document.getElementById('addEventRow').addEventListener('click', () => {
     container.appendChild(row);
 });
 
-// Remove step/event via delegation
-document.addEventListener('click', (e) => {
-    if (e.target.closest('.remove-step-btn')) {
-        const row = e.target.closest('.process-step-row');
-        if (document.querySelectorAll('.process-step-row').length > 1) {
-            row.remove();
-        }
-    }
-    if (e.target.closest('.remove-event-btn')) {
-        const row = e.target.closest('.event-row');
-        if (document.querySelectorAll('.event-row').length > 1) {
-            row.remove();
-        }
-    }
-});
+// Event listeners moved to unified handler above
 
 
 // Form Submit
