@@ -562,4 +562,191 @@ router.post('/campaigns/:slug/toggle', adminMiddleware, async (req, res) => {
   }
 });
 
+// Add new campaign to config file
+const fs = require('fs');
+const path = require('path');
+
+router.post('/campaigns', adminMiddleware, async (req, res) => {
+  try {
+    const {
+      id, slug, name, description, isActive,
+      process: processSteps,
+      affiliate, postbackMapping, events,
+      branding, userInput, settings
+    } = req.body;
+
+    // Validate required fields
+    if (!id || !slug || !name) {
+      return res.status(400).json({ success: false, message: 'id, slug, and name are required' });
+    }
+
+    // Check for duplicate slug/id
+    const existingBySlug = campaignsConfig.getCampaignStrict(slug);
+    const existingById = campaignsConfig.campaigns.find(c => c.id === id);
+    if (existingBySlug || existingById) {
+      return res.status(400).json({ success: false, message: 'A campaign with this slug or id already exists' });
+    }
+
+    // Build the buildLink function - simply appends userId param to the given URL
+    const affUrl = (affiliate?.affiliateUrl || '').replace(/'/g, "\\'");
+    const userIdParam = (affiliate?.userIdParam || 'p1').replace(/'/g, "\\'");
+    const separator = affUrl.includes('?') ? '&' : '?';
+    const buildLinkFn = `function (userId) {\n                    return '${affUrl}${separator}${userIdParam}=' + userId;\n                }`;
+
+    // Build events object string
+    let eventsStr = '';
+    if (events && Array.isArray(events) && events.length > 0) {
+      const eventEntries = events.map(evt => {
+        const identifiers = (evt.identifiers || []).map(i => `'${i.replace(/'/g, "\\'")}'`).join(', ');
+        return `                ${evt.key}: {\n                    identifiers: [${identifiers}],\n                    displayName: '${(evt.displayName || '').replace(/'/g, "\\'")}',\n                    amount: ${parseFloat(evt.amount) || 0}\n                }`;
+      });
+      eventsStr = eventEntries.join(',\n');
+    }
+
+    // Build process steps string
+    let processStr = '';
+    if (processSteps && Array.isArray(processSteps) && processSteps.length > 0) {
+      processStr = processSteps.map(s => `                "${s.replace(/"/g, '\\"')}"`).join(',\n');
+    }
+
+    // Generate the campaign object as a JS string
+    const campaignStr = `
+        {
+            id: '${id.replace(/'/g, "\\'")}',
+            slug: '${slug.replace(/'/g, "\\'")}',
+            name: '${name.replace(/'/g, "\\'")}',
+            description: '${(description || '').replace(/'/g, "\\'")}',
+
+            isActive: ${isActive !== false},
+
+            process: [
+${processStr}
+            ],
+
+            affiliate: {
+                baseUrl: '${affUrl}',
+                offerId: 0,
+                affiliateId: 0,
+                clickIdParam: '${userIdParam}',
+                buildLink: ${buildLinkFn}
+            },
+
+            postbackMapping: {
+                userId: '${(postbackMapping?.userId || 'sub1').replace(/'/g, "\\'")}',
+                payment: '${(postbackMapping?.payment || 'payout').replace(/'/g, "\\'")}',
+                eventName: '${(postbackMapping?.eventName || 'event').replace(/'/g, "\\'")}',
+                offerId: '${(postbackMapping?.offerId || 'offer_id').replace(/'/g, "\\'")}',
+                ipAddress: '${(postbackMapping?.ipAddress || 'ip').replace(/'/g, "\\'")}',
+                timestamp: '${(postbackMapping?.timestamp || 'tdate').replace(/'/g, "\\'")}'
+            },
+
+            events: {
+${eventsStr}
+            },
+
+            branding: {
+                logoText: '${(branding?.logoText || name).replace(/'/g, "\\'")}',
+                tagline: '${(branding?.tagline || '').replace(/'/g, "\\'")}',
+                campaignDisplayName: '${(branding?.campaignDisplayName || name + ' Offer').replace(/'/g, "\\'")}'
+            },
+
+            userInput: {
+                fieldType: '${(userInput?.fieldType || 'mobile').replace(/'/g, "\\'")}',
+                extractMobileFromUPI: true,
+
+                mobile: {
+                    label: 'Your Mobile Number',
+                    placeholder: 'Enter 10-digit mobile number',
+                    maxLength: 10,
+                    pattern: '[0-9]{10}',
+                    errorMessage: 'Please enter a valid 10-digit mobile number'
+                },
+
+                upi: {
+                    label: 'Your UPI ID',
+                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+                    maxLength: 50,
+                    pattern: '[a-zA-Z0-9.\\\\\\\\-_]{2,}@[a-zA-Z]{2,}',
+                    errorMessage: 'Please enter a valid UPI ID'
+                }
+            },
+
+            telegram: {
+                botUsername: 'ncearnings123bot',
+                welcomeMessage: {
+                    title: 'Welcome to ${name.replace(/'/g, "\\'")} Campaign!',
+                    description: 'To register and get notifications:'
+                },
+                notification: {
+                    title: 'NEW CASHBACK RECEIVED!',
+                    showCumulativeEarnings: true,
+                    footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: '${name.replace(/'/g, "\\'")} Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the ${name.replace(/'/g, "\\'")} offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
+                }
+            },
+
+            settings: {
+                enableDuplicateDetection: false,
+                verboseLogging: true,
+                timezone: 'Asia/Kolkata',
+                dateLocale: 'en-IN',
+                currency: '${(settings?.currency || '₹').replace(/'/g, "\\'")}',
+                minWithdrawal: ${parseInt(settings?.minWithdrawal) || 30}
+            }
+        }`;
+
+    // Read the config file
+    const configPath = path.join(__dirname, '..', 'config', 'campaigns.config.js');
+    let fileContent = fs.readFileSync(configPath, 'utf8');
+
+    // Find the last campaign entry closing brace + comma before the array closing bracket
+    // We insert our new campaign before the helper functions section
+    // Look for the closing of the campaigns array: "    ],"
+    const arrayClosePattern = /(\n    \],\s*\n\s*\/\/ ={10,})/;
+    const match = fileContent.match(arrayClosePattern);
+
+    if (!match) {
+      return res.status(500).json({ success: false, message: 'Could not find insertion point in config file' });
+    }
+
+    // Insert the new campaign before the array closing
+    const insertionPoint = fileContent.indexOf(match[0]);
+    const newContent = fileContent.slice(0, insertionPoint) +
+      ',\n' + campaignStr + '\n' +
+      fileContent.slice(insertionPoint);
+
+    // Write the file
+    fs.writeFileSync(configPath, newContent, 'utf8');
+
+    // Clear require cache so new config is loaded
+    delete require.cache[require.resolve('../config/campaigns.config')];
+    delete require.cache[require.resolve('../config/campaign-config')];
+
+    // Re-require to update the in-memory reference
+    const updatedConfig = require('../config/campaigns.config');
+    // Update the module-level reference
+    Object.assign(campaignsConfig, updatedConfig);
+
+    console.log(`✅ New campaign added: ${name} (slug: ${slug})`);
+
+    res.json({
+      success: true,
+      message: 'Campaign added successfully',
+      data: { id, slug, name }
+    });
+
+  } catch (error) {
+    console.error('Add campaign error:', error);
+    res.status(500).json({ success: false, message: 'Failed to add campaign: ' + error.message });
+  }
+});
+
 module.exports = router;

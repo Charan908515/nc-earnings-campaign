@@ -379,7 +379,13 @@
 
             <!-- Campaigns Section -->
             <div id="campaignsSection" class="section-content">
-                <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Campaigns</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Campaigns</h2>
+                    <button class="btn btn-primary text-sm py-2 px-4 rounded-lg flex items-center gap-2"
+                        id="addCampaignBtn">
+                        <i class="fas fa-plus"></i> Add Campaign
+                    </button>
+                </div>
                 <div
                     class="bg-white dark:bg-dark-card rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
                     <div class="overflow-x-auto">
@@ -448,6 +454,269 @@
             <div class="flex justify-end gap-3">
                 <button type="button" class="btn btn-secondary" id="cancelBalanceEditBtn">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveBalanceBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Campaign Modal -->
+    <div id="addCampaignModal" class="fixed inset-0 z-50 bg-black/50 hidden" style="overflow-y:auto;">
+        <div class="min-h-screen flex items-start justify-center py-6 px-4">
+            <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-lg p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">
+                        <i class="fas fa-plus-circle text-primary mr-2"></i>Add New Campaign
+                    </h3>
+                    <button type="button" id="closeCampaignModal" class="text-gray-400 hover:text-gray-600 text-xl"><i
+                            class="fas fa-times"></i></button>
+                </div>
+
+                <form id="addCampaignForm" class="space-y-5">
+                    <!-- BASIC INFO -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-orange-600 mb-3 uppercase tracking-wider">
+                            <i class="fas fa-info-circle mr-1"></i> Basic Info
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Campaign
+                                    ID</label>
+                                <input type="text" id="campId" required
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g. story-max">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">URL
+                                    Slug</label>
+                                <input type="text" id="campSlug" required
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g. story-max">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Campaign
+                                Name</label>
+                            <input type="text" id="campName" required
+                                class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                placeholder="e.g. Story Max Campaign">
+                        </div>
+                        <div class="mt-3">
+                            <label
+                                class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Description</label>
+                            <input type="text" id="campDesc"
+                                class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                placeholder="e.g. Install > Trial Purchase">
+                        </div>
+                    </div>
+
+                    <!-- PROCESS STEPS -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-sm font-bold text-orange-600 uppercase tracking-wider">
+                                <i class="fas fa-list-ol mr-1"></i> Process Steps
+                            </h4>
+                            <button type="button" id="addProcessStep"
+                                class="text-xs bg-orange-500 text-white px-2 py-1 rounded-lg hover:bg-orange-600">+
+                                Step</button>
+                        </div>
+                        <div id="processStepsContainer" class="space-y-2">
+                            <div class="flex gap-2 process-step-row">
+                                <input type="text"
+                                    class="flex-1 p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white process-step-input"
+                                    placeholder="Step 1 description">
+                                <button type="button"
+                                    class="text-red-500 hover:text-red-700 remove-step-btn text-sm px-2"><i
+                                        class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AFFILIATE CONFIG -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-orange-600 mb-3 uppercase tracking-wider">
+                            <i class="fas fa-link mr-1"></i> Affiliate Config
+                        </h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Paste the full affiliate URL. The
+                            userId param will be appended automatically.</p>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Affiliate
+                                    URL</label>
+                                <input type="text" id="campAffiliateUrl"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g. https://Cashpayout-ads.gotracking.in/click/?pid=67&cid=9">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">User ID
+                                    Param Name</label>
+                                <input type="text" id="campUserIdParam"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g. p1 or sub1" value="p1">
+                                <p class="text-xs text-gray-400 mt-1">This will be appended as <code>&p1={userId}</code>
+                                    to the URL</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- POSTBACK MAPPING -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-orange-600 mb-3 uppercase tracking-wider">
+                            <i class="fas fa-exchange-alt mr-1"></i> Postback Mapping
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">User ID
+                                    Param</label>
+                                <input type="text" id="campPbUserId"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    value="sub1">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Payment
+                                    Param</label>
+                                <input type="text" id="campPbPayment"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    value="payout">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Event
+                                    Name Param</label>
+                                <input type="text" id="campPbEventName"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    value="event">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Offer ID
+                                    Param</label>
+                                <input type="text" id="campPbOfferId"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    value="offer_id">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EVENTS -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-sm font-bold text-orange-600 uppercase tracking-wider">
+                                <i class="fas fa-bolt mr-1"></i> Events
+                            </h4>
+                            <button type="button" id="addEventRow"
+                                class="text-xs bg-orange-500 text-white px-2 py-1 rounded-lg hover:bg-orange-600">+
+                                Event</button>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Define postback events.
+                            <strong>Key</strong> = internal name (e.g. install, trial). <strong>Identifier</strong> =
+                            value received in postback (e.g. Install, CPA). <strong>Display Name</strong> = label shown
+                            to users. <strong>Amount</strong> = payout in ₹.
+                        </p>
+                        <div id="eventsContainer" class="space-y-3">
+                            <!-- Default event row -->
+                            <div
+                                class="event-row bg-white dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Event #1</span>
+                                    <button type="button"
+                                        class="text-red-500 hover:text-red-700 remove-event-btn text-xs"><i
+                                            class="fas fa-trash"></i></button>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key</label>
+                                        <input type="text" placeholder="e.g. install"
+                                            class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-key"
+                                            value="install">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Identifier</label>
+                                        <input type="text" placeholder="e.g. Install, CPA"
+                                            class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-identifiers"
+                                            value="Install">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Display
+                                            Name</label>
+                                        <input type="text" placeholder="e.g. App Install"
+                                            class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-display"
+                                            value="Install">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Amount
+                                            (₹)</label>
+                                        <input type="number" placeholder="e.g. 20"
+                                            class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-amount"
+                                            value="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BRANDING -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-orange-600 mb-3 uppercase tracking-wider">
+                            <i class="fas fa-palette mr-1"></i> Branding
+                        </h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Logo
+                                    Text</label>
+                                <input type="text" id="campLogoText"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g. Story Max">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Tagline</label>
+                                <input type="text" id="campTagline"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g. Install and get 20 rupees">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Display
+                                    Name</label>
+                                <input type="text" id="campDisplayName"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g. Story Max Offer">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SETTINGS -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-orange-600 mb-3 uppercase tracking-wider">
+                            <i class="fas fa-cog mr-1"></i> Settings
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Input
+                                    Type</label>
+                                <select id="campFieldType"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option value="mobile">Mobile Number</option>
+                                    <option value="upi">UPI ID</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Min
+                                    Withdrawal (₹)</label>
+                                <input type="number" id="campMinWithdrawal"
+                                    class="w-full p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    value="30">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBMIT -->
+                    <div class="flex gap-3">
+                        <button type="button" id="cancelCampaignBtn"
+                            class="flex-1 btn btn-secondary py-3 rounded-xl text-sm font-bold">Cancel</button>
+                        <button type="submit" id="submitCampaignBtn"
+                            class="flex-1 btn btn-primary py-3 rounded-xl text-sm font-bold">
+                            <i class="fas fa-rocket mr-1"></i> Create Campaign
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

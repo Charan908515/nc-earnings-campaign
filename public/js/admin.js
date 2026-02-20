@@ -1,3 +1,13 @@
+// Toast alert utility
+function showAlert(message, type = 'error') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:12px;color:white;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:opacity 0.3s;max-width:90vw;text-align:center;`;
+    toast.style.background = type === 'success' ? '#22c55e' : '#ef4444';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
 const API_URL = '/api';
 
 // DOM Elements
@@ -692,3 +702,214 @@ setInterval(() => {
 }, 30000);
 
 // No session check needed - server will redirect if not authenticated
+
+// ---------------------------------------------
+// ADD CAMPAIGN LOGIC
+// ---------------------------------------------
+
+const addCampaignModal = document.getElementById('addCampaignModal');
+const addCampaignForm = document.getElementById('addCampaignForm');
+const addCampaignBtn = document.getElementById('addCampaignBtn');
+const closeCampaignModal = document.getElementById('closeCampaignModal');
+const cancelCampaignBtn = document.getElementById('cancelCampaignBtn');
+
+// Open/Close Modal
+addCampaignBtn.addEventListener('click', () => {
+    addCampaignModal.classList.remove('hidden');
+});
+
+function closeAddCampaignModal() {
+    addCampaignModal.classList.add('hidden');
+    addCampaignForm.reset();
+    // Reset dynamic rows
+    document.getElementById('processStepsContainer').innerHTML = `
+        <div class="flex gap-2 process-step-row">
+            <input type="text" class="flex-1 p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white process-step-input" placeholder="Step 1 description">
+            <button type="button" class="text-red-500 hover:text-red-700 remove-step-btn text-sm px-2"><i class="fas fa-trash"></i></button>
+        </div>`;
+    document.getElementById('eventsContainer').innerHTML = `
+        <div class="event-row bg-white dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Event #1</span>
+                <button type="button" class="text-red-500 hover:text-red-700 remove-event-btn text-xs"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key</label><input type="text" placeholder="e.g. install" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-key" value="install"></div>
+                <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Identifier</label><input type="text" placeholder="e.g. Install, CPA" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-identifiers" value="Install"></div>
+                <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Display Name</label><input type="text" placeholder="e.g. App Install" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-display" value="Install"></div>
+                <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Amount (₹)</label><input type="number" placeholder="e.g. 20" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-amount" value="0" step="0.01"></div>
+            </div>
+        </div>`;
+}
+
+closeCampaignModal.addEventListener('click', closeAddCampaignModal);
+cancelCampaignBtn.addEventListener('click', closeAddCampaignModal);
+
+// Close on backdrop click
+addCampaignModal.addEventListener('click', (e) => {
+    if (e.target === addCampaignModal) closeAddCampaignModal();
+});
+
+// Dynamic Process Steps
+document.getElementById('addProcessStep').addEventListener('click', () => {
+    const container = document.getElementById('processStepsContainer');
+    const count = container.querySelectorAll('.process-step-row').length + 1;
+    const row = document.createElement('div');
+    row.className = 'flex gap-2 process-step-row';
+    row.innerHTML = `
+        <input type="text" class="flex-1 p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white process-step-input" placeholder="Step ${count} description">
+        <button type="button" class="text-red-500 hover:text-red-700 remove-step-btn text-sm px-2"><i class="fas fa-trash"></i></button>`;
+    container.appendChild(row);
+});
+
+// Dynamic Event Rows
+document.getElementById('addEventRow').addEventListener('click', () => {
+    const container = document.getElementById('eventsContainer');
+    const row = document.createElement('div');
+    row.className = 'event-row bg-white dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600';
+    const eventNum = container.querySelectorAll('.event-row').length + 1;
+    row.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Event #${eventNum}</span>
+            <button type="button" class="text-red-500 hover:text-red-700 remove-event-btn text-xs"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key</label><input type="text" placeholder="e.g. trial" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-key"></div>
+            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Identifier</label><input type="text" placeholder="e.g. CPA, Trial" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-identifiers"></div>
+            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Display Name</label><input type="text" placeholder="e.g. Free Trial" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-display"></div>
+            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Amount (₹)</label><input type="number" placeholder="e.g. 20" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-amount" value="0" step="0.01"></div>
+        </div>`;
+    container.appendChild(row);
+});
+
+// Remove step/event via delegation
+document.addEventListener('click', (e) => {
+    if (e.target.closest('.remove-step-btn')) {
+        const row = e.target.closest('.process-step-row');
+        if (document.querySelectorAll('.process-step-row').length > 1) {
+            row.remove();
+        }
+    }
+    if (e.target.closest('.remove-event-btn')) {
+        const row = e.target.closest('.event-row');
+        if (document.querySelectorAll('.event-row').length > 1) {
+            row.remove();
+        }
+    }
+});
+
+
+// Form Submit
+addCampaignForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submitCampaignBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Creating...';
+
+    // Collect process steps
+    const processSteps = [];
+    document.querySelectorAll('.process-step-input').forEach(input => {
+        if (input.value.trim()) processSteps.push(input.value.trim());
+    });
+
+    // Collect events
+    const events = [];
+    document.querySelectorAll('.event-row').forEach(row => {
+        const key = row.querySelector('.event-key')?.value.trim();
+        const displayName = row.querySelector('.event-display')?.value.trim();
+        const identifiersStr = row.querySelector('.event-identifiers')?.value.trim();
+        const amount = row.querySelector('.event-amount')?.value;
+
+        if (key) {
+            events.push({
+                key,
+                displayName: displayName || key,
+                identifiers: identifiersStr ? identifiersStr.split(',').map(s => s.trim()).filter(Boolean) : [],
+                amount: parseFloat(amount) || 0
+            });
+        }
+    });
+
+    const payload = {
+        id: document.getElementById('campId').value.trim(),
+        slug: document.getElementById('campSlug').value.trim(),
+        name: document.getElementById('campName').value.trim(),
+        description: document.getElementById('campDesc').value.trim(),
+        isActive: true,
+        process: processSteps,
+        affiliate: {
+            affiliateUrl: document.getElementById('campAffiliateUrl').value.trim(),
+            userIdParam: document.getElementById('campUserIdParam').value.trim() || 'p1'
+        },
+        postbackMapping: {
+            userId: document.getElementById('campPbUserId').value.trim(),
+            payment: document.getElementById('campPbPayment').value.trim(),
+            eventName: document.getElementById('campPbEventName').value.trim(),
+            offerId: document.getElementById('campPbOfferId').value.trim()
+        },
+        events,
+        branding: {
+            logoText: document.getElementById('campLogoText').value.trim(),
+            tagline: document.getElementById('campTagline').value.trim(),
+            campaignDisplayName: document.getElementById('campDisplayName').value.trim()
+        },
+        userInput: {
+            fieldType: document.getElementById('campFieldType').value
+        },
+        settings: {
+            currency: '₹',
+            minWithdrawal: document.getElementById('campMinWithdrawal').value
+        }
+    };
+
+    try {
+        const res = await fetchAuth('/campaigns', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            showAlert('Campaign created successfully!', 'success');
+            closeAddCampaignModal();
+            loadCampaigns();
+        } else {
+            showAlert(data.message || 'Failed to create campaign');
+        }
+    } catch (error) {
+        console.error('Create campaign error:', error);
+        showAlert('Error creating campaign');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-rocket mr-1"></i> Create Campaign';
+    }
+});
+
+// ---------------------------------------------
+// INITIALIZATION: Check Session on Load
+// ---------------------------------------------
+(async function init() {
+    try {
+        // Silently check if session is valid by hitting a protected endpoint
+        // using raw fetch to avoid "Session expired" alert on first visit
+        const res = await fetch(`${API_URL}/admin/stats`, { credentials: 'include' });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+                // Restore session: Hide login, show admin layout
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('adminLayout').classList.remove('hidden');
+
+                // Load default section (Dashboard)
+                showSection('dashboard');
+                console.log('Session restored');
+            }
+        }
+    } catch (e) {
+        // Not authenticated or server error - user stays on login screen
+        console.log('No active session found', e);
+    }
+})();
