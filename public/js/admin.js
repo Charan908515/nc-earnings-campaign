@@ -153,11 +153,21 @@ document.addEventListener('click', (e) => {
 
     // 2. Campaign Management Actions
     const campaignToggleBtn = e.target.closest('.campaign-toggle-btn');
+    const editCampaignBtn = e.target.closest('.edit-campaign-btn');
+    const deleteCampaignBtn = e.target.closest('.delete-campaign-btn');
     if (campaignToggleBtn) {
         e.preventDefault();
         const slug = campaignToggleBtn.dataset.slug;
         const isActive = campaignToggleBtn.dataset.active === 'true';
         if (slug) toggleCampaign(slug, isActive);
+    } else if (editCampaignBtn) {
+        e.preventDefault();
+        const slug = editCampaignBtn.dataset.slug;
+        if (slug) openEditCampaignModal(slug);
+    } else if (deleteCampaignBtn) {
+        e.preventDefault();
+        const slug = deleteCampaignBtn.dataset.slug;
+        if (slug) deleteCampaign(slug);
     }
 
     // 3. Withdrawal Actions
@@ -614,6 +624,8 @@ function renderCampaigns(campaigns) {
             ? `<button class="btn btn-danger campaign-toggle-btn" data-slug="${camp.slug}" data-active="false" style="padding:6px 12px;font-size:13px;">Suspend</button>`
             : `<button class="btn btn-success campaign-toggle-btn" data-slug="${camp.slug}" data-active="true" style="padding:6px 12px;font-size:13px;">Activate</button>`
         }
+                <button class="btn btn-primary edit-campaign-btn" data-slug="${camp.slug}" style="padding:6px 12px;font-size:13px;margin-left:4px;"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-danger delete-campaign-btn" data-slug="${camp.slug}" style="padding:6px 12px;font-size:13px;margin-left:4px;"><i class="fas fa-trash"></i> Delete</button>
             </td>
         </tr>
     `).join('');
@@ -641,6 +653,25 @@ async function toggleCampaign(slug, isActive) {
     } catch (error) {
         console.error('Toggle error:', error);
         showAlert('Failed to update status');
+    }
+}
+
+async function deleteCampaign(slug) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this campaign? This will remove it from the configuration file.')) return;
+
+    try {
+        const res = await fetchAuth(`/campaigns/${slug}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+            showAlert('Campaign deleted successfully', 'success');
+            loadCampaigns();
+        } else {
+            showAlert(data.message || 'Failed to delete campaign');
+        }
+    } catch (error) {
+        console.error('Delete campaign error:', error);
+        showAlert('Error deleting campaign');
     }
 }
 
@@ -709,18 +740,119 @@ setInterval(() => {
 // ADD CAMPAIGN LOGIC
 // ---------------------------------------------
 
+let currentEditSlug = null;
+
 const addCampaignModal = document.getElementById('addCampaignModal');
 const addCampaignForm = document.getElementById('addCampaignForm');
 const addCampaignBtn = document.getElementById('addCampaignBtn');
 const closeCampaignModal = document.getElementById('closeCampaignModal');
 const cancelCampaignBtn = document.getElementById('cancelCampaignBtn');
 
+function showPostbackUrlModal(slug) {
+    const postbackUrl = `${window.location.origin}/api/postback?cid=${slug}`;
+    const modalHtml = `
+    <div id="postbackModal" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white"><i class="fas fa-link text-primary mr-2"></i>Campaign Postback URL</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Please copy this postback URL and configure it in your affiliate network. <br><br><b>Important:</b> You must pass the network's click ID parameters and other needed values dynamically in place of variables.</p>
+            <div class="flex items-center gap-2 mb-6">
+                <input type="text" readonly value="${postbackUrl}" id="postbackUrlInput" class="flex-1 p-3 text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg dark:text-white" onclick="this.select()">
+                <button onclick="navigator.clipboard.writeText(document.getElementById('postbackUrlInput').value); showAlert('Copied!', 'success');" class="btn btn-primary px-4 py-3 rounded-lg"><i class="fas fa-copy"></i></button>
+            </div>
+            <button onclick="document.getElementById('postbackModal').remove()" class="w-full btn btn-secondary py-3 rounded-xl font-bold">Close</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function openEditCampaignModal(slug) {
+    try {
+        const res = await fetchAuth(`/campaigns/${slug}`);
+        const data = await res.json();
+        if (data.success) {
+            const camp = data.data;
+            currentEditSlug = camp.slug;
+
+            document.getElementById('campId').value = camp.id || '';
+            document.getElementById('campSlug').value = camp.slug || '';
+            document.getElementById('campName').value = camp.name || '';
+            document.getElementById('campDesc').value = camp.description || '';
+
+            document.getElementById('campAffiliateUrl').value = camp.affiliate?.affiliateUrl || camp.affiliate?.baseUrl || '';
+            document.getElementById('campUserIdParam').value = camp.affiliate?.clickIdParam || 'p1';
+
+            document.getElementById('campPbUserId').value = camp.postbackMapping?.userId || 'sub1';
+            document.getElementById('campPbPayment').value = camp.postbackMapping?.payment || 'payout';
+            document.getElementById('campPbEventName').value = camp.postbackMapping?.eventName || 'event';
+            document.getElementById('campPbOfferId').value = camp.postbackMapping?.offerId || 'offer_id';
+
+            document.getElementById('campLogoText').value = camp.branding?.logoText || '';
+            document.getElementById('campTagline').value = camp.branding?.tagline || '';
+            document.getElementById('campDisplayName').value = camp.branding?.campaignDisplayName || '';
+
+            document.getElementById('campFieldType').value = camp.userInput?.fieldType || 'mobile';
+            document.getElementById('campMinWithdrawal').value = camp.settings?.minWithdrawal || 30;
+
+            const processContainer = document.getElementById('processStepsContainer');
+            processContainer.innerHTML = '';
+            if (camp.process && camp.process.length > 0) {
+                camp.process.forEach(step => {
+                    const row = document.createElement('div');
+                    row.className = 'flex gap-2 process-step-row';
+                    row.innerHTML = `<input type="text" class="flex-1 p-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white process-step-input" value="${step.replace(/"/g, '&quot;')}">
+                    <button type="button" class="text-red-500 hover:text-red-700 remove-step-btn text-sm px-2"><i class="fas fa-trash"></i></button>`;
+                    processContainer.appendChild(row);
+                });
+            } else {
+                document.getElementById('addProcessStep').click();
+            }
+
+            const eventsContainer = document.getElementById('eventsContainer');
+            eventsContainer.innerHTML = '';
+            if (camp.events) {
+                let i = 1;
+                for (const [key, evt] of Object.entries(camp.events)) {
+                    const row = document.createElement('div');
+                    row.className = 'event-row bg-white dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600';
+                    row.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Event #${i++}</span>
+                            <button type="button" class="text-red-500 hover:text-red-700 remove-event-btn text-xs"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key</label><input type="text" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-key" value="${key.replace(/"/g, '&quot;')}"></div>
+                            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Identifier</label><input type="text" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-identifiers" value="${(evt.identifiers || []).join(', ').replace(/"/g, '&quot;')}"></div>
+                            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Display Name</label><input type="text" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-display" value="${(evt.displayName || '').replace(/"/g, '&quot;')}"></div>
+                            <div><label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Amount (₹)</label><input type="number" class="w-full p-2 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white event-amount" value="${evt.amount || 0}" step="0.01"></div>
+                        </div>`;
+                    eventsContainer.appendChild(row);
+                }
+            } else {
+                document.getElementById('addEventRow').click();
+            }
+
+            document.querySelector('#addCampaignModal h3').innerHTML = '<i class="fas fa-edit text-primary mr-2"></i>Edit Campaign';
+            document.getElementById('submitCampaignBtn').innerHTML = '<i class="fas fa-save mr-1"></i> Save Changes';
+            addCampaignModal.classList.remove('hidden');
+        } else {
+            showAlert(data.message || 'Failed to fetch campaign details');
+        }
+    } catch (error) {
+        console.error('Fetch campaign error:', error);
+        showAlert('Error fetching campaign');
+    }
+}
+
 // Open/Close Modal
 addCampaignBtn.addEventListener('click', () => {
+    currentEditSlug = null;
+    document.querySelector('#addCampaignModal h3').innerHTML = '<i class="fas fa-plus-circle text-primary mr-2"></i>Add New Campaign';
+    document.getElementById('submitCampaignBtn').innerHTML = '<i class="fas fa-rocket mr-1"></i> Create Campaign';
     addCampaignModal.classList.remove('hidden');
 });
 
 function closeAddCampaignModal() {
+    currentEditSlug = null;
     addCampaignModal.classList.add('hidden');
     addCampaignForm.reset();
     // Reset dynamic rows
@@ -852,8 +984,11 @@ addCampaignForm.addEventListener('submit', async (e) => {
     };
 
     try {
-        const res = await fetchAuth('/campaigns', {
-            method: 'POST',
+        const url = currentEditSlug ? `/campaigns/${currentEditSlug}` : '/campaigns';
+        const method = currentEditSlug ? 'PUT' : 'POST';
+
+        const res = await fetchAuth(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
@@ -861,18 +996,20 @@ addCampaignForm.addEventListener('submit', async (e) => {
         const data = await res.json();
 
         if (data.success) {
-            showAlert('Campaign created successfully!', 'success');
+            showAlert(currentEditSlug ? 'Campaign updated successfully!' : 'Campaign created successfully!', 'success');
             closeAddCampaignModal();
             loadCampaigns();
+            // Show postback URL modal
+            showPostbackUrlModal(payload.slug);
         } else {
-            showAlert(data.message || 'Failed to create campaign');
+            showAlert(data.message || (currentEditSlug ? 'Failed to update campaign' : 'Failed to create campaign'));
         }
     } catch (error) {
-        console.error('Create campaign error:', error);
-        showAlert('Error creating campaign');
+        console.error('Save campaign error:', error);
+        showAlert(currentEditSlug ? 'Error updating campaign' : 'Error creating campaign');
     } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-rocket mr-1"></i> Create Campaign';
+        submitBtn.innerHTML = currentEditSlug ? '<i class="fas fa-save mr-1"></i> Save Changes' : '<i class="fas fa-rocket mr-1"></i> Create Campaign';
     }
 });
 

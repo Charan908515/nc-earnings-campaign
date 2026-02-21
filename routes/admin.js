@@ -749,4 +749,369 @@ ${eventsStr}
   }
 });
 
+// Get a single campaign
+router.get('/campaigns/:slug', adminMiddleware, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const campaign = campaignsConfig.getCampaignStrict(slug);
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
+
+    // Attempt to evaluate buildLink for the frontend affiliate URL.
+    // If it's a built manually, replacing USERID_PLACEHOLDER
+    let affiliateUrlPreview = campaign.affiliate.baseUrl;
+    if (typeof campaign.affiliate.buildLink === 'function') {
+      try {
+        const dummyLink = campaign.affiliate.buildLink('USERID_PLACEHOLDER');
+        affiliateUrlPreview = dummyLink.replace(/[\?&]?\w+=USERID_PLACEHOLDER$/, '');
+        // fallback if it didn't end exactly with the token
+        if (affiliateUrlPreview.includes('USERID_PLACEHOLDER')) {
+          affiliateUrlPreview = dummyLink; // Keep as is if complex
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+
+    // Attach to affiliate object to send
+    const dataToSend = JSON.parse(JSON.stringify(campaign));
+    dataToSend.affiliate.affiliateUrl = affiliateUrlPreview;
+
+    res.json({ success: true, data: dataToSend });
+  } catch (error) {
+    console.error('Fetch campaign error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Update an existing campaign in config file
+router.put('/campaigns/:slug', adminMiddleware, async (req, res) => {
+  try {
+    const currentSlug = req.params.slug;
+    const {
+      id, slug, name, description, isActive,
+      process: processSteps,
+      affiliate, postbackMapping, events,
+      branding, userInput, settings
+    } = req.body;
+
+    if (!id || !slug || !name) {
+      return res.status(400).json({ success: false, message: 'id, slug, and name are required' });
+    }
+
+    // Check if new slug/id already exists for a DIFFERENT campaign
+    const existingBySlug = campaignsConfig.getCampaignStrict(slug);
+    if (existingBySlug && existingBySlug.slug !== currentSlug) {
+      return res.status(400).json({ success: false, message: 'Another campaign with this slug already exists' });
+    }
+
+    const configPath = path.join(__dirname, '..', 'config', 'campaigns.config.js');
+    let fileContent = fs.readFileSync(configPath, 'utf8');
+
+    // Robust function to replace the campaign block
+    function replaceCampaignBlock(content, searchSlug, newBlockStr) {
+      const regex = new RegExp(`slug:\\s*['"]${searchSlug.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')}['"]`);
+      const match = content.match(regex);
+      if (!match) return null;
+
+      const slugIndex = match.index;
+
+      let startIdx = slugIndex;
+      while (startIdx >= 0 && content[startIdx] !== '{') {
+        startIdx--;
+      }
+      if (startIdx < 0) return null;
+
+      let endIdx = startIdx;
+      let braceCount = 0;
+      let inString = false;
+      let stringChar = '';
+      let isEscaped = false;
+
+      for (let i = startIdx; i < content.length; i++) {
+        const char = content[i];
+
+        if (inString) {
+          if (isEscaped) {
+            isEscaped = false;
+          } else if (char === '\\\\') {
+            isEscaped = true;
+          } else if (char === stringChar) {
+            inString = false;
+          }
+        } else {
+          if (char === "'" || char === '"' || char === '\`') {
+            inString = true;
+            stringChar = char;
+          } else if (char === '{') {
+            braceCount++;
+          } else if (char === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              endIdx = i;
+              break;
+            }
+          }
+        }
+      }
+
+      if (braceCount !== 0) return null;
+      return content.substring(0, startIdx) + newBlockStr + content.substring(endIdx + 1);
+    }
+
+    const affUrl = (affiliate?.affiliateUrl || '').replace(/'/g, "\\'");
+    const userIdParam = (affiliate?.userIdParam || 'p1').replace(/'/g, "\\'");
+    const separator = affUrl.includes('?') ? '&' : '?';
+    const buildLinkFn = `function (userId) {
+                    return '${affUrl}${separator}${userIdParam}=' + userId;
+                }`;
+
+    let eventsStr = '';
+    if (events && Array.isArray(events) && events.length > 0) {
+      const eventEntries = events.map(evt => {
+        const identifiers = (evt.identifiers || []).map(i => `'${i.replace(/'/g, "\\'")}'`).join(', ');
+        return `                ${evt.key}: {
+                    identifiers: [${identifiers}],
+                    displayName: '${(evt.displayName || '').replace(/'/g, "\\'")}',
+                    amount: ${parseFloat(evt.amount) || 0}
+                }`;
+      });
+      eventsStr = eventEntries.join(',\n');
+    }
+
+    let processStr = '';
+    if (processSteps && Array.isArray(processSteps) && processSteps.length > 0) {
+      processStr = processSteps.map(s => `                "${s.replace(/"/g, '\\"')}"`).join(',\n');
+    }
+
+    const campaignStr = `{
+            id: '${id.replace(/'/g, "\\'")}',
+            slug: '${slug.replace(/'/g, "\\'")}',
+            name: '${name.replace(/'/g, "\\'")}',
+            description: '${(description || '').replace(/'/g, "\\'")}',
+
+            isActive: ${isActive !== false},
+
+            process: [
+${processStr}
+            ],
+
+            affiliate: {
+                baseUrl: '${affUrl}',
+                offerId: 0,
+                affiliateId: 0,
+                clickIdParam: '${userIdParam}',
+                buildLink: ${buildLinkFn}
+            },
+
+            postbackMapping: {
+                userId: '${(postbackMapping?.userId || 'sub1').replace(/'/g, "\\'")}',
+                payment: '${(postbackMapping?.payment || 'payout').replace(/'/g, "\\'")}',
+                eventName: '${(postbackMapping?.eventName || 'event').replace(/'/g, "\\'")}',
+                offerId: '${(postbackMapping?.offerId || 'offer_id').replace(/'/g, "\\'")}',
+                ipAddress: '${(postbackMapping?.ipAddress || 'ip').replace(/'/g, "\\'")}',
+                timestamp: '${(postbackMapping?.timestamp || 'tdate').replace(/'/g, "\\'")}'
+            },
+
+            events: {
+${eventsStr}
+            },
+
+            branding: {
+                logoText: '${(branding?.logoText || name).replace(/'/g, "\\'")}',
+                tagline: '${(branding?.tagline || '').replace(/'/g, "\\'")}',
+                campaignDisplayName: '${(branding?.campaignDisplayName || name + ' Offer').replace(/'/g, "\\'")}'
+            },
+
+            userInput: {
+                fieldType: '${(userInput?.fieldType || 'mobile').replace(/'/g, "\\'")}',
+                extractMobileFromUPI: true,
+
+                mobile: {
+                    label: 'Your Mobile Number',
+                    placeholder: 'Enter 10-digit mobile number',
+                    maxLength: 10,
+                    pattern: '[0-9]{10}',
+                    errorMessage: 'Please enter a valid 10-digit mobile number'
+                },
+
+                upi: {
+                    label: 'Your UPI ID',
+                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+                    maxLength: 50,
+                    pattern: '[a-zA-Z0-9.\\\\\\\\-_]{2,}@[a-zA-Z]{2,}',
+                    errorMessage: 'Please enter a valid UPI ID'
+                }
+            },
+
+            telegram: {
+                botUsername: 'ncearnings123bot',
+                welcomeMessage: {
+                    title: 'Welcome to ${name.replace(/'/g, "\\'")} Campaign!',
+                    description: 'To register and get notifications:'
+                },
+                notification: {
+                    title: 'NEW CASHBACK RECEIVED!',
+                    showCumulativeEarnings: true,
+                    footer: 'Powered by @NC Earnings'
+                },
+                help: {
+                    title: '${name.replace(/'/g, "\\'")} Help',
+                    howItWorks: [
+                        'Register with your UPI ID using /start YOUR_UPI_ID',
+                        'Complete the ${name.replace(/'/g, "\\'")} offer',
+                        'Get notified when your postback arrives',
+                        'Check your wallet for earnings'
+                    ]
+                }
+            },
+
+            settings: {
+                enableDuplicateDetection: false,
+                verboseLogging: true,
+                timezone: 'Asia/Kolkata',
+                dateLocale: 'en-IN',
+                currency: '${(settings?.currency || '₹').replace(/'/g, "\\'")}',
+                minWithdrawal: ${parseInt(settings?.minWithdrawal) || 30}
+            }
+        }`;
+
+    const newContent = replaceCampaignBlock(fileContent, currentSlug, campaignStr);
+
+    if (!newContent) {
+      return res.status(500).json({ success: false, message: 'Could not find existing campaign block to replace' });
+    }
+
+    fs.writeFileSync(configPath, newContent, 'utf8');
+
+    // Reload cache
+    delete require.cache[require.resolve('../config/campaigns.config')];
+    if (require.cache[require.resolve('../config/campaign-config')]) {
+      delete require.cache[require.resolve('../config/campaign-config')];
+    }
+    const updatedConfig = require('../config/campaigns.config');
+    Object.assign(campaignsConfig, updatedConfig);
+
+    res.json({
+      success: true,
+      message: 'Campaign updated successfully',
+      data: { id, slug, name }
+    });
+  } catch (error) {
+    console.error('Update campaign error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update campaign: ' + error.message });
+  }
+});
+
+// Delete a campaign
+router.delete('/campaigns/:slug', adminMiddleware, async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // Validate campaign exists
+    const campaign = campaignsConfig.getCampaignStrict(slug);
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
+
+    const configPath = path.join(__dirname, '..', 'config', 'campaigns.config.js');
+    let fileContent = fs.readFileSync(configPath, 'utf8');
+
+    // Robust function to remove the campaign block
+    function removeCampaignBlock(content, searchSlug) {
+      const regex = new RegExp(`slug:\\s*['"]${searchSlug.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')}['"]`);
+      const match = content.match(regex);
+      if (!match) return null;
+
+      const slugIndex = match.index;
+
+      let startIdx = slugIndex;
+      while (startIdx >= 0 && content[startIdx] !== '{') {
+        startIdx--;
+      }
+      if (startIdx < 0) return null;
+
+      let endIdx = startIdx;
+      let braceCount = 0;
+      let inString = false;
+      let stringChar = '';
+      let isEscaped = false;
+
+      for (let i = startIdx; i < content.length; i++) {
+        const char = content[i];
+
+        if (inString) {
+          if (isEscaped) {
+            isEscaped = false;
+          } else if (char === '\\\\') {
+            isEscaped = true;
+          } else if (char === stringChar) {
+            inString = false;
+          }
+        } else {
+          if (char === "'" || char === '"' || char === '\`') {
+            inString = true;
+            stringChar = char;
+          } else if (char === '{') {
+            braceCount++;
+          } else if (char === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              endIdx = i;
+              break;
+            }
+          }
+        }
+      }
+
+      if (braceCount !== 0) return null;
+
+      // Look for a trailing comma
+      let nextIdx = endIdx + 1;
+      while (nextIdx < content.length && /\s/.test(content[nextIdx])) {
+        nextIdx++;
+      }
+      if (content[nextIdx] === ',') {
+        endIdx = nextIdx;
+      } else {
+        // If no trailing comma, look for a leading comma
+        let prevIdx = startIdx - 1;
+        while (prevIdx >= 0 && /\s/.test(content[prevIdx])) {
+          prevIdx--;
+        }
+        if (content[prevIdx] === ',') {
+          startIdx = prevIdx;
+        }
+      }
+
+      return content.substring(0, startIdx) + content.substring(endIdx + 1);
+    }
+
+    const newContent = removeCampaignBlock(fileContent, slug);
+
+    if (!newContent) {
+      return res.status(500).json({ success: false, message: 'Could not find campaign block to remove' });
+    }
+
+    fs.writeFileSync(configPath, newContent, 'utf8');
+
+    // Reload cache
+    delete require.cache[require.resolve('../config/campaigns.config')];
+    if (require.cache[require.resolve('../config/campaign-config')]) {
+      delete require.cache[require.resolve('../config/campaign-config')];
+    }
+    const updatedConfig = require('../config/campaigns.config');
+    Object.assign(campaignsConfig, updatedConfig);
+
+    res.json({
+      success: true,
+      message: 'Campaign deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete campaign error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete campaign: ' + error.message });
+  }
+});
+
 module.exports = router;
