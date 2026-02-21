@@ -124,9 +124,13 @@
             <div class="relative">
               <input type="text" id="regMobile"
                 class="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl py-3.5 px-4 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary input-focus transition-all font-medium text-base"
-                placeholder="Enter UPI ID (e.g., 9876543210@paytm)" maxlength="50"
-                pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
+                placeholder="Enter UPI ID (e.g., 9876543210@paytm)" maxlength="50" pattern="[0-9-]{2,}@[a-zA-Z]{2,}"
+                required>
             </div>
+            <p class="mt-1.5 text-[0.65rem] font-medium text-orange-600 dark:text-orange-400 flex items-start gap-1">
+              <i class="fas fa-info-circle mt-0.5"></i>
+              <span>Don't enter UPI IDs with names like <b>abcd@axl</b></span>
+            </p>
           </div>
 
           <div>
@@ -172,7 +176,7 @@
             <div class="relative">
               <input type="text" id="loginMobile"
                 class="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl py-3.5 px-4 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-primary input-focus transition-all font-medium text-base"
-                placeholder="Enter your UPI ID" maxlength="50" pattern="[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}" required>
+                placeholder="Enter your UPI ID" maxlength="50" pattern="[0-9-]{2,}@[a-zA-Z]{2,}" required>
             </div>
           </div>
 

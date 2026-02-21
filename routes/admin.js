@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
 router.get('/withdrawals', adminMiddleware, async (req, res) => {
   try {
     const withdrawals = await Withdrawal.find()
-      .populate('userId', 'mobileNumber')
+      .populate('userId', 'name mobileNumber')
       .sort({ requestedAt: -1 });
 
     res.json({
@@ -439,7 +439,8 @@ router.get('/history', adminMiddleware, async (req, res) => {
   try {
     const successfulWithdrawals = await Withdrawal.find({ status: 'completed' })
       .sort({ processedAt: -1 })
-      .select('mobileNumber amount upiId requestedAt processedAt');
+      .populate('userId', 'name')
+      .select('userId mobileNumber amount upiId requestedAt processedAt');
 
     res.json({
       success: true,
@@ -466,7 +467,8 @@ router.get('/logs', adminMiddleware, async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('createdAt eventType mobileNumber payment offerId campaignName'),
+        .populate('userId', 'name')
+        .select('userId createdAt eventType mobileNumber payment offerId campaignName'),
       Earning.countDocuments()
     ]);
 
@@ -475,7 +477,7 @@ router.get('/logs', adminMiddleware, async (req, res) => {
       sno: skip + index + 1,
       time: log.createdAt,
       eventName: log.eventType,
-      campaignName: log.campaignName || 'Unknown',
+      userName: log.userId?.name || 'Unknown',
       upiId: log.mobileNumber,
       payment: log.payment,
       offerId: log.offerId

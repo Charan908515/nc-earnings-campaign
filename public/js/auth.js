@@ -90,7 +90,7 @@ registerForm.addEventListener('submit', async (e) => {
     }
 
     // Validate UPI ID format
-    if (!/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
+    if (!/^[0-9-]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
         showAlert('Please enter a valid UPI ID (e.g., 9876543210@paytm)');
         return;
     }
@@ -150,7 +150,7 @@ loginForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('loginPassword').value;
 
     // Validate UPI ID format
-    if (!/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
+    if (!/^[0-9-]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
         showAlert('Please enter a valid UPI ID');
         return;
     }

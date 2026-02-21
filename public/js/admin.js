@@ -342,7 +342,8 @@ function displayWithdrawals(withdrawals) {
         pendingWithdrawalsTable.innerHTML = pending.map(w => `
       <tr class="border-b border-gray-100 dark:border-gray-700">
         <td class="p-4">
-            <div class="font-bold text-gray-800 dark:text-gray-200">${w.mobileNumber}</div>
+            <div class="font-bold text-gray-800 dark:text-gray-200">${w.userId?.name || 'user'}</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">${w.mobileNumber}</div>
             <div class="text-xs text-gray-500">${w.upiId}</div>
             <div class="text-xs text-gray-400 mt-1">${formatDate(w.requestedAt)}</div>
         </td>
@@ -370,7 +371,8 @@ function displayWithdrawals(withdrawals) {
         <tr class="border-b border-gray-100 dark:border-gray-700">
           <td class="p-4 text-xs text-gray-500">${formatDate(w.requestedAt)}</td>
           <td class="p-4">
-            <div class="font-medium text-gray-800 dark:text-gray-200">${w.mobileNumber}</div>
+            <div class="font-medium text-gray-800 dark:text-gray-200">${w.userId?.name || 'user'}</div>
+            <div class="text-xs text-gray-500">${w.mobileNumber}</div>
           </td>
           <td class="p-4 font-bold">₹${w.amount}</td>
           <td class="p-4">
@@ -475,7 +477,8 @@ function renderUsers(users) {
     tbody.innerHTML = users.map(user => `
         <tr class="border-b border-gray-100 dark:border-gray-700">
             <td class="p-4">
-                <div class="font-semibold text-gray-800 dark:text-white">${user.mobileNumber || '-'}</div>
+                <div class="font-semibold text-gray-800 dark:text-white">${user.name || 'user'}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">${user.mobileNumber || '-'}</div>
                 <div class="text-xs text-gray-500">${user.upiId}</div>
             </td>
             <td class="p-4 font-medium">₹${user.availableBalance}</td>
@@ -721,9 +724,12 @@ function renderLogs(logs, pagination) {
     tbody.innerHTML = logs.map(log => `
         <tr>
             <td>${formatDate(log.time)}</td>
+            <td class="p-4">
+                <div class="font-medium text-gray-800 dark:text-gray-200">${log.userName}</div>
+                <div class="text-xs text-gray-500">${log.upiId}</div>
+            </td>
             <td><span class="badge badge-primary">${log.campaignName}</span></td>
             <td>${log.eventName}</td>
-            <td>${log.upiId}</td>
             <td>₹${log.payment}</td>
         </tr>
     `).join('');
