@@ -155,6 +155,7 @@ document.addEventListener('click', (e) => {
     const campaignToggleBtn = e.target.closest('.campaign-toggle-btn');
     const editCampaignBtn = e.target.closest('.edit-campaign-btn');
     const deleteCampaignBtn = e.target.closest('.delete-campaign-btn');
+    const viewPostbackBtn = e.target.closest('.view-postback-btn');
     if (campaignToggleBtn) {
         e.preventDefault();
         const slug = campaignToggleBtn.dataset.slug;
@@ -168,6 +169,10 @@ document.addEventListener('click', (e) => {
         e.preventDefault();
         const slug = deleteCampaignBtn.dataset.slug;
         if (slug) deleteCampaign(slug);
+    } else if (viewPostbackBtn) {
+        e.preventDefault();
+        const slug = viewPostbackBtn.dataset.slug;
+        if (slug) fetchAndShowPostback(slug);
     }
 
     // 3. Withdrawal Actions
@@ -625,6 +630,7 @@ function renderCampaigns(campaigns) {
             : `<button class="btn btn-success campaign-toggle-btn" data-slug="${camp.slug}" data-active="true" style="padding:6px 12px;font-size:13px;">Activate</button>`
         }
                 <button class="btn btn-primary edit-campaign-btn" data-slug="${camp.slug}" style="padding:6px 12px;font-size:13px;margin-left:4px;"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-secondary view-postback-btn" data-slug="${camp.slug}" style="padding:6px 12px;font-size:13px;margin-left:4px;"><i class="fas fa-link"></i> Postback</button>
                 <button class="btn btn-danger delete-campaign-btn" data-slug="${camp.slug}" style="padding:6px 12px;font-size:13px;margin-left:4px;"><i class="fas fa-trash"></i> Delete</button>
             </td>
         </tr>
@@ -672,6 +678,21 @@ async function deleteCampaign(slug) {
     } catch (error) {
         console.error('Delete campaign error:', error);
         showAlert('Error deleting campaign');
+    }
+}
+
+async function fetchAndShowPostback(slug) {
+    try {
+        const res = await fetchAuth(`/campaigns/${slug}`);
+        const data = await res.json();
+        if (data.success) {
+            showPostbackUrlModal(data.data.slug, data.postbackSecret, data.data.postbackMapping);
+        } else {
+            showAlert(data.message || 'Failed to fetch postback info');
+        }
+    } catch (error) {
+        console.error('Fetch postback error:', error);
+        showAlert('Error fetching postback details');
     }
 }
 
@@ -748,16 +769,36 @@ const addCampaignBtn = document.getElementById('addCampaignBtn');
 const closeCampaignModal = document.getElementById('closeCampaignModal');
 const cancelCampaignBtn = document.getElementById('cancelCampaignBtn');
 
-function showPostbackUrlModal(slug) {
-    const postbackUrl = `${window.location.origin}/api/postback?cid=${slug}`;
+function showPostbackUrlModal(slug, secret, mapping = {}) {
+    const baseUrl = `${window.location.origin}/api/postback`;
+    let postbackUrl = `${baseUrl}?cid=${slug}`;
+
+    if (secret) {
+        postbackUrl += `&secret=${secret}`;
+    }
+
+    // Add mapped parameters using the parameter names as the macro values
+    if (mapping.userId) postbackUrl += `&${mapping.userId}={${mapping.userId}}`;
+    if (mapping.payment) postbackUrl += `&${mapping.payment}={${mapping.payment}}`;
+    if (mapping.eventName) postbackUrl += `&${mapping.eventName}={${mapping.eventName}}`;
+    if (mapping.offerId) postbackUrl += `&${mapping.offerId}={${mapping.offerId}}`;
+    if (mapping.ipAddress) postbackUrl += `&${mapping.ipAddress}={${mapping.ipAddress}}`;
+    if (mapping.timestamp) postbackUrl += `&${mapping.timestamp}={${mapping.timestamp}}`;
+
     const modalHtml = `
     <div id="postbackModal" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white"><i class="fas fa-link text-primary mr-2"></i>Campaign Postback URL</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Please copy this postback URL and configure it in your affiliate network. <br><br><b>Important:</b> You must pass the network's click ID parameters and other needed values dynamically in place of variables.</p>
-            <div class="flex items-center gap-2 mb-6">
-                <input type="text" readonly value="${postbackUrl}" id="postbackUrlInput" class="flex-1 p-3 text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg dark:text-white" onclick="this.select()">
-                <button onclick="navigator.clipboard.writeText(document.getElementById('postbackUrlInput').value); showAlert('Copied!', 'success');" class="btn btn-primary px-4 py-3 rounded-lg"><i class="fas fa-copy"></i></button>
+        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white"><i class="fas fa-link text-primary mr-2"></i>Complete Postback URL</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Copy this full URL and paste it into your Affiliate Network settings.
+                <br><br>
+                <span class="text-xs text-primary font-bold uppercase">Note:</span> We have pre-filled the parameters using your mapping names. Replace the values in <code>{ }</code> with your network's actual macros if needed.
+            </p>
+            <div class="flex flex-col gap-2 mb-6">
+                <textarea readonly id="postbackUrlInput" class="w-full h-24 p-3 text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg dark:text-white font-mono break-all" onclick="this.select()">${postbackUrl}</textarea>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('postbackUrlInput').value); showAlert('Copied!', 'success');" class="btn btn-primary w-full py-3 rounded-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-copy"></i> Copy Full URL
+                </button>
             </div>
             <button onclick="document.getElementById('postbackModal').remove()" class="w-full btn btn-secondary py-3 rounded-xl font-bold">Close</button>
         </div>
@@ -785,6 +826,8 @@ async function openEditCampaignModal(slug) {
             document.getElementById('campPbPayment').value = camp.postbackMapping?.payment || 'payout';
             document.getElementById('campPbEventName').value = camp.postbackMapping?.eventName || 'event';
             document.getElementById('campPbOfferId').value = camp.postbackMapping?.offerId || 'offer_id';
+            document.getElementById('campPbIpAddress').value = camp.postbackMapping?.ipAddress || 'ip';
+            document.getElementById('campPbTimestamp').value = camp.postbackMapping?.timestamp || 'tdate';
 
             document.getElementById('campLogoText').value = camp.branding?.logoText || '';
             document.getElementById('campTagline').value = camp.branding?.tagline || '';
@@ -966,7 +1009,9 @@ addCampaignForm.addEventListener('submit', async (e) => {
             userId: document.getElementById('campPbUserId').value.trim(),
             payment: document.getElementById('campPbPayment').value.trim(),
             eventName: document.getElementById('campPbEventName').value.trim(),
-            offerId: document.getElementById('campPbOfferId').value.trim()
+            offerId: document.getElementById('campPbOfferId').value.trim(),
+            ipAddress: document.getElementById('campPbIpAddress').value.trim(),
+            timestamp: document.getElementById('campPbTimestamp').value.trim()
         },
         events,
         branding: {
@@ -1000,7 +1045,7 @@ addCampaignForm.addEventListener('submit', async (e) => {
             closeAddCampaignModal();
             loadCampaigns();
             // Show postback URL modal
-            showPostbackUrlModal(payload.slug);
+            showPostbackUrlModal(payload.slug, data.postbackSecret, payload.postbackMapping);
         } else {
             showAlert(data.message || (currentEditSlug ? 'Failed to update campaign' : 'Failed to create campaign'));
         }

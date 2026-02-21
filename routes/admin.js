@@ -740,7 +740,8 @@ ${eventsStr}
     res.json({
       success: true,
       message: 'Campaign added successfully',
-      data: { id, slug, name }
+      data: { id, slug, name },
+      postbackSecret: process.env.POSTBACK_SECRET
     });
 
   } catch (error) {
@@ -778,7 +779,11 @@ router.get('/campaigns/:slug', adminMiddleware, async (req, res) => {
     const dataToSend = JSON.parse(JSON.stringify(campaign));
     dataToSend.affiliate.affiliateUrl = affiliateUrlPreview;
 
-    res.json({ success: true, data: dataToSend });
+    res.json({
+      success: true,
+      data: dataToSend,
+      postbackSecret: process.env.POSTBACK_SECRET
+    });
   } catch (error) {
     console.error('Fetch campaign error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -996,7 +1001,8 @@ ${eventsStr}
     res.json({
       success: true,
       message: 'Campaign updated successfully',
-      data: { id, slug, name }
+      data: { id, slug, name },
+      postbackSecret: process.env.POSTBACK_SECRET
     });
   } catch (error) {
     console.error('Update campaign error:', error);
