@@ -72,14 +72,27 @@ router.get('/balance', authMiddleware, async (req, res) => {
 // Get earnings history
 router.get('/history', authMiddleware, async (req, res) => {
     try {
+        const campaignsConfig = require('../config/campaigns.config');
+
         const earnings = await Earning.find({ userId: req.user.userId })
             .sort({ createdAt: -1 })
             .limit(100)
-            .select('createdAt eventType payment campaignName');
+            .select('createdAt eventType payment campaignName campaignSlug walletDisplayName');
+
+        const dataWithDisplay = earnings.map(item => {
+            const doc = item.toObject();
+            if (!doc.walletDisplayName && doc.campaignSlug) {
+                const campaign = campaignsConfig.getCampaign(doc.campaignSlug);
+                doc.walletDisplayName = campaign?.wallet_display || campaign?.branding?.campaignDisplayName || doc.campaignName;
+            } else if (!doc.walletDisplayName) {
+                doc.walletDisplayName = doc.campaignName;
+            }
+            return doc;
+        });
 
         res.json({
             success: true,
-            data: earnings
+            data: dataWithDisplay
         });
     } catch (error) {
         if (process.env.NODE_ENV !== 'production') {

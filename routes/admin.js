@@ -569,7 +569,7 @@ const path = require('path');
 router.post('/campaigns', adminMiddleware, async (req, res) => {
   try {
     const {
-      id, slug, name, description, isActive,
+      id, slug, name, wallet_display, description, isActive,
       process: processSteps,
       affiliate, postbackMapping, events,
       branding, userInput, settings
@@ -613,6 +613,7 @@ router.post('/campaigns', adminMiddleware, async (req, res) => {
     const campaignStr = `
         {
             id: '${id.replace(/'/g, "\\'")}',
+            wallet_display: '${(wallet_display || '').replace(/'/g, "\\'")}',
             slug: '${slug.replace(/'/g, "\\'")}',
             name: '${name.replace(/'/g, "\\'")}',
             description: '${(description || '').replace(/'/g, "\\'")}',
@@ -795,7 +796,7 @@ router.put('/campaigns/:slug', adminMiddleware, async (req, res) => {
   try {
     const currentSlug = req.params.slug;
     const {
-      id, slug, name, description, isActive,
+      id, slug, name, wallet_display, description, isActive,
       process: processSteps,
       affiliate, postbackMapping, events,
       branding, userInput, settings

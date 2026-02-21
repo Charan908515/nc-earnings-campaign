@@ -164,7 +164,8 @@ router.get('/', async (req, res) => {
             clickTime: (timestamp && timestamp !== 'null' && !isNaN(parseInt(timestamp))) ? new Date(parseInt(timestamp) * 1000) : null,
             conversionTime: new Date(),
             campaignSlug: slug,
-            campaignName: name
+            campaignName: name,
+            walletDisplayName: activeCampaign.wallet_display || activeCampaign.branding?.campaignDisplayName || name
         });
 
         await earning.save();

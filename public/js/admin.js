@@ -36,20 +36,6 @@ const allWithdrawalsTable = document.getElementById('allWithdrawalsTable');
 // const recentEarningsTable = document.getElementById('recentEarningsTable'); // Removed
 const campaignsTable = document.getElementById('campaignsTable');
 
-// Show alert
-function showAlert(message, type = 'error') {
-    const alertClass = type === 'success' ? 'alert-success' : type === 'info' ? 'alert-info' : 'alert-error';
-    alertContainer.innerHTML = `
-    <div class="alert ${alertClass}">
-      ${message}
-    </div>
-  `;
-
-    setTimeout(() => {
-        alertContainer.innerHTML = '';
-    }, 5000);
-}
-
 // Format date
 function formatDate(dateString) {
     if (!dateString) return '-';
@@ -219,6 +205,18 @@ document.addEventListener('click', (e) => {
         if (row && document.querySelectorAll('.event-row').length > 1) {
             row.remove();
         }
+    }
+
+    // Modal Closing (Dynamic Modals)
+    const closeModalBtn = e.target.closest('.close-modal-btn');
+    const dynamicModal = e.target.closest('.dynamic-modal');
+    if (closeModalBtn) {
+        e.preventDefault();
+        const modal = closeModalBtn.closest('.dynamic-modal');
+        if (modal) modal.remove();
+    } else if (dynamicModal && e.target === dynamicModal) {
+        // Clicked on overlay
+        dynamicModal.remove();
     }
 });
 
@@ -770,6 +768,9 @@ const closeCampaignModal = document.getElementById('closeCampaignModal');
 const cancelCampaignBtn = document.getElementById('cancelCampaignBtn');
 
 function showPostbackUrlModal(slug, secret, mapping = {}) {
+    const existing = document.getElementById('postbackModal');
+    if (existing) existing.remove();
+
     const baseUrl = `${window.location.origin}/api/postback`;
     let postbackUrl = `${baseUrl}?cid=${slug}`;
 
@@ -786,8 +787,9 @@ function showPostbackUrlModal(slug, secret, mapping = {}) {
     if (mapping.timestamp) postbackUrl += `&${mapping.timestamp}={${mapping.timestamp}}`;
 
     const modalHtml = `
-    <div id="postbackModal" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-lg p-6">
+    <div id="postbackModal" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4 dynamic-modal">
+        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-lg p-6 relative">
+            <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 close-modal-btn"><i class="fas fa-times"></i></button>
             <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white"><i class="fas fa-link text-primary mr-2"></i>Complete Postback URL</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Copy this full URL and paste it into your Affiliate Network settings.
@@ -800,7 +802,7 @@ function showPostbackUrlModal(slug, secret, mapping = {}) {
                     <i class="fas fa-copy"></i> Copy Full URL
                 </button>
             </div>
-            <button onclick="document.getElementById('postbackModal').remove()" class="w-full btn btn-secondary py-3 rounded-xl font-bold">Close</button>
+            <button class="w-full btn btn-secondary py-3 rounded-xl font-bold close-modal-btn">Close</button>
         </div>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
@@ -829,6 +831,7 @@ async function openEditCampaignModal(slug) {
             document.getElementById('campPbIpAddress').value = camp.postbackMapping?.ipAddress || 'ip';
             document.getElementById('campPbTimestamp').value = camp.postbackMapping?.timestamp || 'tdate';
 
+            document.getElementById('campWalletDisplay').value = camp.wallet_display || '';
             document.getElementById('campLogoText').value = camp.branding?.logoText || '';
             document.getElementById('campTagline').value = camp.branding?.tagline || '';
             document.getElementById('campDisplayName').value = camp.branding?.campaignDisplayName || '';
@@ -998,6 +1001,7 @@ addCampaignForm.addEventListener('submit', async (e) => {
         id: document.getElementById('campId').value.trim(),
         slug: document.getElementById('campSlug').value.trim(),
         name: document.getElementById('campName').value.trim(),
+        wallet_display: document.getElementById('campWalletDisplay').value.trim(),
         description: document.getElementById('campDesc').value.trim(),
         isActive: true,
         process: processSteps,

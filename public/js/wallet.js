@@ -229,7 +229,7 @@ async function loadEarningsHistory() {
                                 <i class="fas fa-arrow-down"></i>
                             </div>
                             <div>
-                                <h4 class="font-bold text-gray-800 text-sm">${item.campaignName || 'Campaign Reward'}</h4>
+                                <h4 class="font-bold text-gray-800 text-sm">${item.walletDisplayName || item.campaignName || 'Campaign Reward'}</h4>
                                 <p class="text-xs text-gray-400 capitalize">${item.eventType} • ${formatDate(item.createdAt)}</p>
                             </div>
                         </div>
@@ -251,7 +251,7 @@ async function loadEarningsHistory() {
                                     <i class="fas fa-arrow-down"></i>
                                 </div>
                                 <div class="overflow-hidden">
-                                    <h4 class="font-bold text-gray-800 text-xs truncate">${item.campaignName || 'Reward'}</h4>
+                                    <h4 class="font-bold text-gray-800 text-xs truncate">${item.walletDisplayName || item.campaignName || 'Reward'}</h4>
                                     <p class="text-[10px] text-gray-400 truncate">${formatDate(item.createdAt)}</p>
                                 </div>
                             </div>

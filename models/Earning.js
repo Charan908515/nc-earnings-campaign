@@ -62,6 +62,10 @@ const earningSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    walletDisplayName: {
+        type: String,
+        default: ''
+    },
     createdAt: {
         type: Date,
         default: Date.now

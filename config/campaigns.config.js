@@ -20,6 +20,7 @@ module.exports = {
 
         {
             id: 'story-max',
+            wallet_display: 'Story Max',
             slug: 'story-max', // Friendly URL slug
             name: 'Story Max Campaign adzaffi',
             description: 'Install > Trial Purchase',
@@ -153,6 +154,7 @@ module.exports = {
 
         {
             id: 'incred-gold',
+            wallet_display: 'Incred Gold',
             slug: 'incred-gold',
             name: 'Incred Gold Campaign cashout',
             description: 'Install > Gold Purchase',
@@ -285,6 +287,7 @@ module.exports = {
 
         {
             id: 'waves',
+            wallet_display: 'Waves',
             slug: 'waves',
             name: 'Waves Campaign cashout',
             description: 'Welcome to Waves Campaign',
@@ -412,6 +415,7 @@ module.exports = {
 
         {
             id: 'story-tv-visioncamp',
+            wallet_display: 'Story TV',
             slug: 'story-tv',
             name: 'Story TV Campaign visioncamp',
             description: 'Install > Trial Purchase',
@@ -517,6 +521,7 @@ module.exports = {
 
         {
             id: 'story-tv-cashpayout id 5',
+            wallet_display: 'Story TV',
             slug: 'story-tv-2',
             name: 'STORY TV Campaign cashout id 5',
             description: 'Welcome to Story tv Campaign',
@@ -645,6 +650,7 @@ module.exports = {
 
         {
             id: 'story-tv-cashpayout id 9',
+            wallet_display: 'Story TV',
             slug: 'story-tv-3',
             name: 'STORY TV Campaign cashout id 9',
             description: 'Welcome to Story tv Campaign',
@@ -778,58 +784,85 @@ module.exports = {
         }
         ,
 
-        
-
-        
-
         {
-            id: 'testing',
-            slug: 'testing1234',
-            name: 'testing',
-            description: 'Install > Trial Purchase',
+            id: 'story-tv-osamcampaign',
+            wallet_display: 'Story TV',
+            slug: 'story-tv-4',
+            name: 'STORY TV Campaign cashout id 9',
+            description: 'Welcome to Story tv Campaign',
 
+            // Campaign status
             isActive: true,
 
+            // ----------------------------------------
+            // 📝 CAMPAIGN PROCESS
+            // ----------------------------------------
             process: [
-                "hello"
+                "Enter  your Mobile Number and click on proceed",
+                "Install the Story TV App",
+                "Wait for the install tracking message from the telegram bot",
+                "After successful tracking of install enter the number and otp and buy the 1RS trial purchase",
+                "Wait for the trail tracking message from the telegram bot",
+                "Cashback will be added to wallet",
+                "Repeat the process after deleting the advertising id and the toggling the areoplane mode"
             ],
 
+            // ----------------------------------------
+            // 🔗 AFFILIATE LINK CONFIGURATION
+            // ----------------------------------------
             affiliate: {
-                baseUrl: 'https://panel.visioncamp.in/go?cid=145&uid=919',
-                offerId: 0,
-                affiliateId: 0,
+                baseUrl: 'https://partner.osamcamp.in/go',
+                offerId: 99,
+                affiliateId: 128,
                 clickIdParam: 'p1',
                 buildLink: function (userId) {
-                    return 'https://panel.visioncamp.in/go?cid=145&uid=919&p1=' + userId;
+                    return `${this.baseUrl}?o=${this.offerId}&a=${this.affiliateId}&p1=${userId}`;
                 }
             },
 
+            // ----------------------------------------
+            // 📥 POSTBACK PARAMETER MAPPING
+            // ----------------------------------------
             postbackMapping: {
-                userId: 'sub1',
-                payment: 'payout',
-                eventName: 'event',
-                offerId: 'offer_id',
-                ipAddress: 'ip',
-                timestamp: 'tdate'
+                userId: 'p1',          // Network sends: sub1
+                payment: 'payout',            // Network sends: payout
+                eventName: 'event',           // Network sends: event
+                offerId: 'offerid',          // Network sends: offer_id (optional)
+                ipAddress: 'ip',              // Network sends: ip (optional)
+                timestamp: 'tdate'        // Network sends: tdate (optional)
             },
 
+            // ----------------------------------------
+            // 💰 EVENT DEFINITIONS & PAYMENTS
+            // ----------------------------------------
             events: {
                 install: {
                     identifiers: ['Install'],
-                    displayName: 'Install',
+                    displayName: 'Install Tracked',
                     amount: 0
+                },
+                trail: {
+                    identifiers: ['trial'],
+                    displayName: 'Trial Tracked',
+                    amount: 25
                 }
             },
 
+            // ----------------------------------------
+            // 🎨 BRANDING & UI
+            // ----------------------------------------
             branding: {
-                logoText: 'Story TV',
+                logoText: 'STORY TV',
                 tagline: 'Install and Purchase Trial get 25 rupees',
-                campaignDisplayName: 'Story TV Offer'
+                campaignDisplayName: 'STORY TV Offer'
             },
 
+            // ----------------------------------------
+            // 📱 USER INPUT CONFIGURATION
+            // ----------------------------------------
             userInput: {
-                fieldType: 'mobile',
-                extractMobileFromUPI: true,
+                fieldType: 'mobile',  // 'mobile' or 'upi'
+                extractMobileFromUPI: true,  // Extract mobile from UPI ID for click_id
 
                 mobile: {
                     label: 'Your Mobile Number',
@@ -843,15 +876,18 @@ module.exports = {
                     label: 'Your UPI ID',
                     placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
                     maxLength: 50,
-                    pattern: '[a-zA-Z0-9.\\\\-_]{2,}@[a-zA-Z]{2,}',
+                    pattern: '[a-zA-Z0-9.\\-_]{2,}@[a-zA-Z]{2,}',
                     errorMessage: 'Please enter a valid UPI ID'
                 }
             },
 
+            // ----------------------------------------
+            // 📱 TELEGRAM SETTINGS
+            // ----------------------------------------
             telegram: {
                 botUsername: 'ncearnings123bot',
                 welcomeMessage: {
-                    title: 'Welcome to testing Campaign!',
+                    title: 'Welcome to STORY TV Campaign!',
                     description: 'To register and get notifications:'
                 },
                 notification: {
@@ -860,16 +896,19 @@ module.exports = {
                     footer: 'Powered by @NC Earnings'
                 },
                 help: {
-                    title: 'testing Help',
+                    title: 'STORY TV Help',
                     howItWorks: [
                         'Register with your UPI ID using /start YOUR_UPI_ID',
-                        'Complete the testing offer',
+                        'Complete the Incred Gold offer',
                         'Get notified when your postback arrives',
                         'Check your wallet for earnings'
                     ]
                 }
             },
 
+            // ----------------------------------------
+            // ⚙️ ADDITIONAL SETTINGS
+            // ----------------------------------------
             settings: {
                 enableDuplicateDetection: false,
                 verboseLogging: true,
@@ -879,6 +918,12 @@ module.exports = {
                 minWithdrawal: 30
             }
         }
+
+
+
+
+
+
 
     ],
 
