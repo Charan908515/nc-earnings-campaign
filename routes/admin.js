@@ -600,7 +600,7 @@ router.post('/campaigns', adminMiddleware, async (req, res) => {
     if (events && Array.isArray(events) && events.length > 0) {
       const eventEntries = events.map(evt => {
         const identifiers = (evt.identifiers || []).map(i => `'${i.replace(/'/g, "\\'")}'`).join(', ');
-        return `                ${evt.key}: {\n                    identifiers: [${identifiers}],\n                    displayName: '${(evt.displayName || '').replace(/'/g, "\\'")}',\n                    amount: ${parseFloat(evt.amount) || 0}\n                }`;
+        return `                '${evt.key.replace(/'/g, "\\'")}': {\n                    identifiers: [${identifiers}],\n                    displayName: '${(evt.displayName || '').replace(/'/g, "\\'")}',\n                    amount: ${parseFloat(evt.amount) || 0}\n                }`;
       });
       eventsStr = eventEntries.join(',\n');
     }
@@ -879,7 +879,7 @@ router.put('/campaigns/:slug', adminMiddleware, async (req, res) => {
     if (events && Array.isArray(events) && events.length > 0) {
       const eventEntries = events.map(evt => {
         const identifiers = (evt.identifiers || []).map(i => `'${i.replace(/'/g, "\\'")}'`).join(', ');
-        return `                ${evt.key}: {
+        return `                '${evt.key.replace(/'/g, "\\'")}': {
                     identifiers: [${identifiers}],
                     displayName: '${(evt.displayName || '').replace(/'/g, "\\'")}',
                     amount: ${parseFloat(evt.amount) || 0}
