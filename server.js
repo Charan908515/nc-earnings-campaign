@@ -33,7 +33,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
-connectDB();
+connectDB().then(async () => {
+    // Seed campaigns from config file if DB is empty
+    const seedCampaigns = require('./scripts/seedCampaigns');
+    await seedCampaigns();
+});
 
 // Initialize Telegram Bots
 const { initializeBots } = require('./config/telegram');
@@ -200,25 +204,21 @@ app.get('/wallet', requireAuth, (req, res) => {
     res.sendFile(__dirname + '/public/wallet.html');
 });
 
-// Import campaign config directly to validate slugs
-const campaignConfig = require('./config/campaigns.config');
-const CampaignState = require('./models/CampaignState'); // Import model
+// Import Campaign model for slug validation
+const Campaign = require('./models/Campaign');
 
 // Campaign dynamic route
 app.get('/c/:slug', async (req, res) => {
-    const slug = req.params.slug;
-    const campaign = campaignConfig.getCampaignStrict(slug);
-
-    if (!campaign) {
-        return res.status(404).send('Campaign Not Found'); // Simplified 404 for brevity here, logic same as before
-    }
-
     try {
-        // Enforce DB State check
-        const state = await CampaignState.findOne({ slug });
-        // If state exists and isActive is false, it's suspended.
-        // If state doesn't exist, we fallback to config (which is usually true)
-        if (state && !state.isActive) {
+        const slug = req.params.slug;
+        const campaign = await Campaign.findOne({ slug });
+
+        if (!campaign) {
+            return res.status(404).send('Campaign Not Found');
+        }
+
+        // Check if campaign is suspended
+        if (!campaign.isActive) {
             return res.status(503).send(`
                 <html>
                     <head><title>Campaign Suspended</title></head>

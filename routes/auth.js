@@ -2,10 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const campaignConfig = require('../config/campaigns.config');
-
-// Get active campaign
-const getActiveCampaign = () => campaignConfig.getActiveCampaign();
+const Campaign = require('../models/Campaign');
 
 // Helper function to extract mobile number from UPI ID
 function extractMobileFromUPI(upiId, campaign) {
@@ -30,7 +27,11 @@ function extractMobileFromUPI(upiId, campaign) {
 router.post('/register', async (req, res) => {
     try {
         const { upiId, password } = req.body;
-        const activeCampaign = getActiveCampaign();
+        const activeCampaign = await Campaign.findOne({ isActive: true });
+
+        if (!activeCampaign) {
+            return res.status(500).json({ success: false, message: 'No active campaign found' });
+        }
 
         // Validate input
         if (!upiId || !password) {
@@ -115,12 +116,11 @@ router.post('/register', async (req, res) => {
         console.log('📅 Registration Time:', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
         console.log('='.repeat(60) + '\n');
 
-        // Generate JWT token with longer expiration
         // Generate JWT token with longer expiration (30 days)
         const token = jwt.sign(
             { userId: user._id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '30d' } // 30 days
+            { expiresIn: '30d' }
         );
 
         // Set token as HTTP-only cookie
@@ -186,12 +186,11 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
-        // Generate JWT token with longer expiration
         // Generate JWT token with longer expiration (30 days)
         const token = jwt.sign(
             { userId: user._id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '30d' } // 30 days
+            { expiresIn: '30d' }
         );
 
         // Set token as HTTP-only cookie

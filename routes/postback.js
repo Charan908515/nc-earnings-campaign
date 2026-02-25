@@ -2,16 +2,8 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Earning = require('../models/Earning');
+const Campaign = require('../models/Campaign');
 const { sendUserNotification, sendChannelNotification } = require('../config/telegram');
-const campaignsConfig = require('../config/campaigns.config');
-
-// Get campaign by offer ID
-const getCampaignByOfferId = (offerId) => {
-    return campaignsConfig.campaigns.find(c => String(c.affiliate.offerId) === String(offerId));
-};
-
-// Get active campaign based on request (cid fallback)
-const getCampaign = (cid) => campaignsConfig.getCampaign(cid);
 
 // Postback receiver endpoint - Universal handler for any affiliate network
 router.get('/', async (req, res) => {
@@ -21,7 +13,7 @@ router.get('/', async (req, res) => {
         // Try to find campaign by offer_id first (more reliable), then fall back to cid
         let activeCampaign = null;
         if (offer_id) {
-            activeCampaign = getCampaignByOfferId(offer_id);
+            activeCampaign = await Campaign.findOne({ 'affiliate.offerId': Number(offer_id) });
             if (activeCampaign) {
                 console.log(`🔍 Campaign detected by offer_id ${offer_id}: ${activeCampaign.name}`);
             }
@@ -29,10 +21,17 @@ router.get('/', async (req, res) => {
 
         // Fall back to cid if offer_id didn't match
         if (!activeCampaign) {
-            activeCampaign = getCampaign(cid);
+            activeCampaign = await Campaign.findOne({
+                $or: [{ slug: cid }, { id: cid }]
+            });
             if (activeCampaign) {
                 console.log(`🔍 Campaign detected by cid ${cid}: ${activeCampaign.name}`);
             }
+        }
+
+        // If still not found, fall back to first active campaign
+        if (!activeCampaign) {
+            activeCampaign = await Campaign.findOne({ isActive: true });
         }
 
         if (!activeCampaign) {
@@ -42,7 +41,8 @@ router.get('/', async (req, res) => {
             });
         }
 
-        const { postbackMapping, events, settings, slug, name } = activeCampaign;
+        const { postbackMapping, settings, slug, name } = activeCampaign;
+        const events = activeCampaign.getEventsObject();
 
         // Verify Secret Key
         const secret = req.query.secret;
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
         // Extract values using the campaign's parameter mapping
         const extractedData = {};
 
-        for (const [internalKey, networkParam] of Object.entries(postbackMapping)) {
+        for (const [internalKey, networkParam] of Object.entries(postbackMapping.toObject())) {
             extractedData[internalKey] = req.query[networkParam];
         }
 

@@ -6,7 +6,7 @@ const User = require('../models/User');
 const Earning = require('../models/Earning');
 const Withdrawal = require('../models/Withdrawal');
 const CampaignState = require('../models/CampaignState');
-const campaignsConfig = require('../config/campaigns.config');
+const Campaign = require('../models/Campaign');
 const { sendWithdrawalApprovalNotification, sendWithdrawalRejectionNotification } = require('../config/telegram');
 
 // Admin login endpoint
@@ -323,6 +323,7 @@ router.get('/stats', adminMiddleware, async (req, res) => {
       totalEarningsResult,
       pendingWithdrawals,
       totalWithdrawalResult,
+      totalWalletResult,
       statsToday,
       statsYesterday,
       statsMonth
@@ -331,6 +332,7 @@ router.get('/stats', adminMiddleware, async (req, res) => {
       Earning.aggregate([{ $group: { _id: null, total: { $sum: '$payment' } } }]),
       Withdrawal.countDocuments({ status: 'pending' }),
       Withdrawal.aggregate([{ $match: { status: 'pending' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+      User.aggregate([{ $group: { _id: null, total: { $sum: '$availableBalance' } } }]),
       getStats(todayStart),
       getStats(yesterdayStart, yesterdayEnd),
       getStats(monthStart)
@@ -341,6 +343,7 @@ router.get('/stats', adminMiddleware, async (req, res) => {
       data: {
         totalUsers,
         totalEarnings: totalEarningsResult[0]?.total || 0,
+        totalWalletBalance: totalWalletResult[0]?.total || 0,
         pendingWithdrawals,
         totalWithdrawalAmount: totalWithdrawalResult[0]?.total || 0,
         postbacks: {
@@ -459,9 +462,6 @@ router.get('/logs', adminMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
 
-    const campaignsConfig = require('../config/campaigns.config');
-    const activeCampaign = campaignsConfig.getActiveCampaign();
-
     const [logs, total] = await Promise.all([
       Earning.find()
         .sort({ createdAt: -1 })
@@ -506,28 +506,16 @@ router.get('/logs', adminMiddleware, async (req, res) => {
 // Get all campaigns with status
 router.get('/campaigns', adminMiddleware, async (req, res) => {
   try {
-    // 1. Get static config list
-    const staticCampaigns = campaignsConfig.campaigns;
+    const campaigns = await Campaign.find().sort({ createdAt: -1 });
 
-    // 2. Get dynamic states from DB
-    const campaignStates = await CampaignState.find();
+    const data = campaigns.map(camp => ({
+      slug: camp.slug,
+      name: camp.name,
+      description: camp.description,
+      isActive: camp.isActive
+    }));
 
-    // 3. Merge data
-    const mergedCampaigns = staticCampaigns.map(camp => {
-      const state = campaignStates.find(s => s.slug === camp.slug);
-      return {
-        slug: camp.slug,
-        name: camp.name,
-        description: camp.description,
-        // Active if DB says true, OR if DB has no record (defaulting to config logic)
-        isActive: state ? state.isActive : camp.isActive
-      };
-    });
-
-    res.json({
-      success: true,
-      data: mergedCampaigns
-    });
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Campaigns fetch error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -540,23 +528,20 @@ router.post('/campaigns/:slug/toggle', adminMiddleware, async (req, res) => {
     const { slug } = req.params;
     const { isActive } = req.body;
 
-    // Validate slug exists in config
-    const configCamp = campaignsConfig.getCampaignStrict(slug);
-    if (!configCamp) {
-      return res.status(404).json({ success: false, message: 'Campaign not found in config' });
-    }
-
-    // Update or Insert state in DB
-    const state = await CampaignState.findOneAndUpdate(
+    const campaign = await Campaign.findOneAndUpdate(
       { slug },
       { isActive },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { new: true }
     );
+
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
 
     res.json({
       success: true,
       message: `Campaign ${isActive ? 'activated' : 'suspended'} successfully`,
-      data: { slug, isActive: state.isActive }
+      data: { slug, isActive: campaign.isActive }
     });
   } catch (error) {
     console.error('Campaign toggle error:', error);
@@ -564,10 +549,7 @@ router.post('/campaigns/:slug/toggle', adminMiddleware, async (req, res) => {
   }
 });
 
-// Add new campaign to config file
-const fs = require('fs');
-const path = require('path');
-
+// Add new campaign
 router.post('/campaigns', adminMiddleware, async (req, res) => {
   try {
     const {
@@ -583,161 +565,105 @@ router.post('/campaigns', adminMiddleware, async (req, res) => {
     }
 
     // Check for duplicate slug/id
-    const existingBySlug = campaignsConfig.getCampaignStrict(slug);
-    const existingById = campaignsConfig.campaigns.find(c => c.id === id);
-    if (existingBySlug || existingById) {
+    const existing = await Campaign.findOne({ $or: [{ slug }, { id }] });
+    if (existing) {
       return res.status(400).json({ success: false, message: 'A campaign with this slug or id already exists' });
     }
 
-    // Build the buildLink function - simply appends userId param to the given URL
-    const affUrl = (affiliate?.affiliateUrl || '').replace(/'/g, "\\'");
-    const userIdParam = (affiliate?.userIdParam || 'p1').replace(/'/g, "\\'");
-    const separator = affUrl.includes('?') ? '&' : '?';
-    const buildLinkFn = `function (userId) {\n                    return '${affUrl}${separator}${userIdParam}=' + userId;\n                }`;
-
-    // Build events object string
-    let eventsStr = '';
-    if (events && Array.isArray(events) && events.length > 0) {
-      const eventEntries = events.map(evt => {
-        const identifiers = (evt.identifiers || []).map(i => `'${i.replace(/'/g, "\\'")}'`).join(', ');
-        return `                '${evt.key.replace(/'/g, "\\'")}': {\n                    identifiers: [${identifiers}],\n                    displayName: '${(evt.displayName || '').replace(/'/g, "\\'")}',\n                    amount: ${parseFloat(evt.amount) || 0}\n                }`;
-      });
-      eventsStr = eventEntries.join(',\n');
+    // Convert events to array format
+    let eventsArray = [];
+    if (events && Array.isArray(events)) {
+      eventsArray = events.map(evt => ({
+        key: evt.key,
+        identifiers: evt.identifiers || [],
+        displayName: evt.displayName || '',
+        amount: parseFloat(evt.amount) || 0
+      }));
     }
 
-    // Build process steps string
-    let processStr = '';
-    if (processSteps && Array.isArray(processSteps) && processSteps.length > 0) {
-      processStr = processSteps.map(s => `                "${s.replace(/"/g, '\\"')}"`).join(',\n');
-    }
+    const affUrl = affiliate?.affiliateUrl || '';
+    const userIdParam = affiliate?.userIdParam || 'p1';
 
-    // Generate the campaign object as a JS string
-    const campaignStr = `
-        {
-            id: '${id.replace(/'/g, "\\'")}',
-            wallet_display: '${(wallet_display || '').replace(/'/g, "\\'")}',
-            slug: '${slug.replace(/'/g, "\\'")}',
-            name: '${name.replace(/'/g, "\\'")}',
-            description: '${(description || '').replace(/'/g, "\\'")}',
+    const campaign = new Campaign({
+      id,
+      slug,
+      name,
+      wallet_display: wallet_display || '',
+      description: description || '',
+      isActive: isActive !== false,
+      process: processSteps || [],
+      affiliate: {
+        baseUrl: affUrl,
+        affiliateUrl: affUrl,
+        offerId: 0,
+        affiliateId: 0,
+        clickIdParam: userIdParam,
+        userIdParam: userIdParam
+      },
+      postbackMapping: {
+        userId: postbackMapping?.userId || 'sub1',
+        payment: postbackMapping?.payment || 'payout',
+        eventName: postbackMapping?.eventName || 'event',
+        offerId: postbackMapping?.offerId || 'offer_id',
+        ipAddress: postbackMapping?.ipAddress || 'ip',
+        timestamp: postbackMapping?.timestamp || 'tdate'
+      },
+      events: eventsArray,
+      branding: {
+        logoText: branding?.logoText || name,
+        tagline: branding?.tagline || '',
+        campaignDisplayName: branding?.campaignDisplayName || name + ' Offer'
+      },
+      userInput: {
+        fieldType: userInput?.fieldType || 'mobile',
+        extractMobileFromUPI: true,
+        mobile: {
+          label: 'Your Mobile Number',
+          placeholder: 'Enter 10-digit mobile number',
+          maxLength: 10,
+          pattern: '[0-9]{10}',
+          errorMessage: 'Please enter a valid 10-digit mobile number'
+        },
+        upi: {
+          label: 'Your UPI ID',
+          placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+          maxLength: 50,
+          pattern: '[a-zA-Z0-9.\\\\-_]{2,}@[a-zA-Z]{2,}',
+          errorMessage: 'Please enter a valid UPI ID'
+        }
+      },
+      telegram: {
+        botUsername: 'ncearnings123bot',
+        welcomeMessage: {
+          title: `Welcome to ${name} Campaign!`,
+          description: 'To register and get notifications:'
+        },
+        notification: {
+          title: 'NEW CASHBACK RECEIVED!',
+          showCumulativeEarnings: true,
+          footer: 'Powered by @NC Earnings'
+        },
+        help: {
+          title: `${name} Help`,
+          howItWorks: [
+            'Register with your UPI ID using /start YOUR_UPI_ID',
+            `Complete the ${name} offer`,
+            'Get notified when your postback arrives',
+            'Check your wallet for earnings'
+          ]
+        }
+      },
+      settings: {
+        enableDuplicateDetection: false,
+        verboseLogging: true,
+        timezone: 'Asia/Kolkata',
+        dateLocale: 'en-IN',
+        currency: settings?.currency || '₹',
+        minWithdrawal: parseInt(settings?.minWithdrawal) || 30
+      }
+    });
 
-            isActive: ${isActive !== false},
-
-            process: [
-${processStr}
-            ],
-
-            affiliate: {
-                baseUrl: '${affUrl}',
-                offerId: 0,
-                affiliateId: 0,
-                clickIdParam: '${userIdParam}',
-                buildLink: ${buildLinkFn}
-            },
-
-            postbackMapping: {
-                userId: '${(postbackMapping?.userId || 'sub1').replace(/'/g, "\\'")}',
-                payment: '${(postbackMapping?.payment || 'payout').replace(/'/g, "\\'")}',
-                eventName: '${(postbackMapping?.eventName || 'event').replace(/'/g, "\\'")}',
-                offerId: '${(postbackMapping?.offerId || 'offer_id').replace(/'/g, "\\'")}',
-                ipAddress: '${(postbackMapping?.ipAddress || 'ip').replace(/'/g, "\\'")}',
-                timestamp: '${(postbackMapping?.timestamp || 'tdate').replace(/'/g, "\\'")}'
-            },
-
-            events: {
-${eventsStr}
-            },
-
-            branding: {
-                logoText: '${(branding?.logoText || name).replace(/'/g, "\\'")}',
-                tagline: '${(branding?.tagline || '').replace(/'/g, "\\'")}',
-                campaignDisplayName: '${(branding?.campaignDisplayName || name + ' Offer').replace(/'/g, "\\'")}'
-            },
-
-            userInput: {
-                fieldType: '${(userInput?.fieldType || 'mobile').replace(/'/g, "\\'")}',
-                extractMobileFromUPI: true,
-
-                mobile: {
-                    label: 'Your Mobile Number',
-                    placeholder: 'Enter 10-digit mobile number',
-                    maxLength: 10,
-                    pattern: '[0-9]{10}',
-                    errorMessage: 'Please enter a valid 10-digit mobile number'
-                },
-
-                upi: {
-                    label: 'Your UPI ID',
-                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
-                    maxLength: 50,
-                    pattern: '[a-zA-Z0-9.\\\\\\\\-_]{2,}@[a-zA-Z]{2,}',
-                    errorMessage: 'Please enter a valid UPI ID'
-                }
-            },
-
-            telegram: {
-                botUsername: 'ncearnings123bot',
-                welcomeMessage: {
-                    title: 'Welcome to ${name.replace(/'/g, "\\'")} Campaign!',
-                    description: 'To register and get notifications:'
-                },
-                notification: {
-                    title: 'NEW CASHBACK RECEIVED!',
-                    showCumulativeEarnings: true,
-                    footer: 'Powered by @NC Earnings'
-                },
-                help: {
-                    title: '${name.replace(/'/g, "\\'")} Help',
-                    howItWorks: [
-                        'Register with your UPI ID using /start YOUR_UPI_ID',
-                        'Complete the ${name.replace(/'/g, "\\'")} offer',
-                        'Get notified when your postback arrives',
-                        'Check your wallet for earnings'
-                    ]
-                }
-            },
-
-            settings: {
-                enableDuplicateDetection: false,
-                verboseLogging: true,
-                timezone: 'Asia/Kolkata',
-                dateLocale: 'en-IN',
-                currency: '${(settings?.currency || '₹').replace(/'/g, "\\'")}',
-                minWithdrawal: ${parseInt(settings?.minWithdrawal) || 30}
-            }
-        }`;
-
-    // Read the config file
-    const configPath = path.join(__dirname, '..', 'config', 'campaigns.config.js');
-    let fileContent = fs.readFileSync(configPath, 'utf8');
-
-    // Find the last campaign entry closing brace + comma before the array closing bracket
-    // We insert our new campaign before the helper functions section
-    // Look for the closing of the campaigns array: "    ],"
-    const arrayClosePattern = /(\n    \],\s*\n\s*\/\/ ={10,})/;
-    const match = fileContent.match(arrayClosePattern);
-
-    if (!match) {
-      return res.status(500).json({ success: false, message: 'Could not find insertion point in config file' });
-    }
-
-    // Insert the new campaign before the array closing
-    const insertionPoint = fileContent.indexOf(match[0]);
-    const newContent = fileContent.slice(0, insertionPoint) +
-      ',\n' + campaignStr + '\n' +
-      fileContent.slice(insertionPoint);
-
-    // Write the file
-    fs.writeFileSync(configPath, newContent, 'utf8');
-
-    // Clear require cache so new config is loaded
-    delete require.cache[require.resolve('../config/campaigns.config')];
-    delete require.cache[require.resolve('../config/campaign-config')];
-
-    // Re-require to update the in-memory reference
-    const updatedConfig = require('../config/campaigns.config');
-    // Update the module-level reference
-    Object.assign(campaignsConfig, updatedConfig);
-
+    await campaign.save();
     console.log(`✅ New campaign added: ${name} (slug: ${slug})`);
 
     res.json({
@@ -757,30 +683,19 @@ ${eventsStr}
 router.get('/campaigns/:slug', adminMiddleware, async (req, res) => {
   try {
     const { slug } = req.params;
-    const campaign = campaignsConfig.getCampaignStrict(slug);
+    const campaign = await Campaign.findOne({ slug });
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
 
-    // Attempt to evaluate buildLink for the frontend affiliate URL.
-    // If it's a built manually, replacing USERID_PLACEHOLDER
-    let affiliateUrlPreview = campaign.affiliate.baseUrl;
-    if (typeof campaign.affiliate.buildLink === 'function') {
-      try {
-        const dummyLink = campaign.affiliate.buildLink('USERID_PLACEHOLDER');
-        affiliateUrlPreview = dummyLink.replace(/[\?&]?\w+=USERID_PLACEHOLDER$/, '');
-        // fallback if it didn't end exactly with the token
-        if (affiliateUrlPreview.includes('USERID_PLACEHOLDER')) {
-          affiliateUrlPreview = dummyLink; // Keep as is if complex
-        }
-      } catch (e) {
-        // Fallback
-      }
-    }
+    // Build a preview of the affiliate URL
+    let affiliateUrlPreview = campaign.affiliate.affiliateUrl || campaign.affiliate.baseUrl;
 
-    // Attach to affiliate object to send
-    const dataToSend = JSON.parse(JSON.stringify(campaign));
+    const dataToSend = campaign.toObject();
     dataToSend.affiliate.affiliateUrl = affiliateUrlPreview;
+
+    // Convert events array back to the format the admin frontend expects
+    dataToSend.events = campaign.events;
 
     res.json({
       success: true,
@@ -793,7 +708,7 @@ router.get('/campaigns/:slug', adminMiddleware, async (req, res) => {
   }
 });
 
-// Update an existing campaign in config file
+// Update an existing campaign
 router.put('/campaigns/:slug', adminMiddleware, async (req, res) => {
   try {
     const currentSlug = req.params.slug;
@@ -808,198 +723,116 @@ router.put('/campaigns/:slug', adminMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'id, slug, and name are required' });
     }
 
-    // Check if new slug/id already exists for a DIFFERENT campaign
-    const existingBySlug = campaignsConfig.getCampaignStrict(slug);
-    if (existingBySlug && existingBySlug.slug !== currentSlug) {
-      return res.status(400).json({ success: false, message: 'Another campaign with this slug already exists' });
+    // Check if new slug already exists for a DIFFERENT campaign
+    if (slug !== currentSlug) {
+      const existingBySlug = await Campaign.findOne({ slug });
+      if (existingBySlug) {
+        return res.status(400).json({ success: false, message: 'Another campaign with this slug already exists' });
+      }
     }
 
-    const configPath = path.join(__dirname, '..', 'config', 'campaigns.config.js');
-    let fileContent = fs.readFileSync(configPath, 'utf8');
+    // Convert events to array format
+    let eventsArray = [];
+    if (events && Array.isArray(events)) {
+      eventsArray = events.map(evt => ({
+        key: evt.key,
+        identifiers: evt.identifiers || [],
+        displayName: evt.displayName || '',
+        amount: parseFloat(evt.amount) || 0
+      }));
+    }
 
-    // Robust function to replace the campaign block
-    function replaceCampaignBlock(content, searchSlug, newBlockStr) {
-      const regex = new RegExp(`slug:\\s*['"]${searchSlug.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')}['"]`);
-      const match = content.match(regex);
-      if (!match) return null;
+    const affUrl = affiliate?.affiliateUrl || '';
+    const userIdParam = affiliate?.userIdParam || 'p1';
 
-      const slugIndex = match.index;
-
-      let startIdx = slugIndex;
-      while (startIdx >= 0 && content[startIdx] !== '{') {
-        startIdx--;
-      }
-      if (startIdx < 0) return null;
-
-      let endIdx = startIdx;
-      let braceCount = 0;
-      let inString = false;
-      let stringChar = '';
-      let isEscaped = false;
-
-      for (let i = startIdx; i < content.length; i++) {
-        const char = content[i];
-
-        if (inString) {
-          if (isEscaped) {
-            isEscaped = false;
-          } else if (char === '\\\\') {
-            isEscaped = true;
-          } else if (char === stringChar) {
-            inString = false;
-          }
-        } else {
-          if (char === "'" || char === '"' || char === '\`') {
-            inString = true;
-            stringChar = char;
-          } else if (char === '{') {
-            braceCount++;
-          } else if (char === '}') {
-            braceCount--;
-            if (braceCount === 0) {
-              endIdx = i;
-              break;
-            }
-          }
+    const updateData = {
+      id,
+      slug,
+      name,
+      wallet_display: wallet_display || '',
+      description: description || '',
+      isActive: isActive !== false,
+      process: processSteps || [],
+      affiliate: {
+        baseUrl: affUrl,
+        affiliateUrl: affUrl,
+        offerId: 0,
+        affiliateId: 0,
+        clickIdParam: userIdParam,
+        userIdParam: userIdParam
+      },
+      postbackMapping: {
+        userId: postbackMapping?.userId || 'sub1',
+        payment: postbackMapping?.payment || 'payout',
+        eventName: postbackMapping?.eventName || 'event',
+        offerId: postbackMapping?.offerId || 'offer_id',
+        ipAddress: postbackMapping?.ipAddress || 'ip',
+        timestamp: postbackMapping?.timestamp || 'tdate'
+      },
+      events: eventsArray,
+      branding: {
+        logoText: branding?.logoText || name,
+        tagline: branding?.tagline || '',
+        campaignDisplayName: branding?.campaignDisplayName || name + ' Offer'
+      },
+      userInput: {
+        fieldType: userInput?.fieldType || 'mobile',
+        extractMobileFromUPI: true,
+        mobile: {
+          label: 'Your Mobile Number',
+          placeholder: 'Enter 10-digit mobile number',
+          maxLength: 10,
+          pattern: '[0-9]{10}',
+          errorMessage: 'Please enter a valid 10-digit mobile number'
+        },
+        upi: {
+          label: 'Your UPI ID',
+          placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
+          maxLength: 50,
+          pattern: '[a-zA-Z0-9.\\\\-_]{2,}@[a-zA-Z]{2,}',
+          errorMessage: 'Please enter a valid UPI ID'
         }
+      },
+      telegram: {
+        botUsername: 'ncearnings123bot',
+        welcomeMessage: {
+          title: `Welcome to ${name} Campaign!`,
+          description: 'To register and get notifications:'
+        },
+        notification: {
+          title: 'NEW CASHBACK RECEIVED!',
+          showCumulativeEarnings: true,
+          footer: 'Powered by @NC Earnings'
+        },
+        help: {
+          title: `${name} Help`,
+          howItWorks: [
+            'Register with your UPI ID using /start YOUR_UPI_ID',
+            `Complete the ${name} offer`,
+            'Get notified when your postback arrives',
+            'Check your wallet for earnings'
+          ]
+        }
+      },
+      settings: {
+        enableDuplicateDetection: false,
+        verboseLogging: true,
+        timezone: 'Asia/Kolkata',
+        dateLocale: 'en-IN',
+        currency: settings?.currency || '₹',
+        minWithdrawal: parseInt(settings?.minWithdrawal) || 30
       }
+    };
 
-      if (braceCount !== 0) return null;
-      return content.substring(0, startIdx) + newBlockStr + content.substring(endIdx + 1);
+    const campaign = await Campaign.findOneAndUpdate(
+      { slug: currentSlug },
+      updateData,
+      { new: true }
+    );
+
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
-
-    const affUrl = (affiliate?.affiliateUrl || '').replace(/'/g, "\\'");
-    const userIdParam = (affiliate?.userIdParam || 'p1').replace(/'/g, "\\'");
-    const separator = affUrl.includes('?') ? '&' : '?';
-    const buildLinkFn = `function (userId) {
-                    return '${affUrl}${separator}${userIdParam}=' + userId;
-                }`;
-
-    let eventsStr = '';
-    if (events && Array.isArray(events) && events.length > 0) {
-      const eventEntries = events.map(evt => {
-        const identifiers = (evt.identifiers || []).map(i => `'${i.replace(/'/g, "\\'")}'`).join(', ');
-        return `                '${evt.key.replace(/'/g, "\\'")}': {
-                    identifiers: [${identifiers}],
-                    displayName: '${(evt.displayName || '').replace(/'/g, "\\'")}',
-                    amount: ${parseFloat(evt.amount) || 0}
-                }`;
-      });
-      eventsStr = eventEntries.join(',\n');
-    }
-
-    let processStr = '';
-    if (processSteps && Array.isArray(processSteps) && processSteps.length > 0) {
-      processStr = processSteps.map(s => `                "${s.replace(/"/g, '\\"')}"`).join(',\n');
-    }
-
-    const campaignStr = `{
-            id: '${id.replace(/'/g, "\\'")}',
-            slug: '${slug.replace(/'/g, "\\'")}',
-            name: '${name.replace(/'/g, "\\'")}',
-            description: '${(description || '').replace(/'/g, "\\'")}',
-
-            isActive: ${isActive !== false},
-
-            process: [
-${processStr}
-            ],
-
-            affiliate: {
-                baseUrl: '${affUrl}',
-                offerId: 0,
-                affiliateId: 0,
-                clickIdParam: '${userIdParam}',
-                buildLink: ${buildLinkFn}
-            },
-
-            postbackMapping: {
-                userId: '${(postbackMapping?.userId || 'sub1').replace(/'/g, "\\'")}',
-                payment: '${(postbackMapping?.payment || 'payout').replace(/'/g, "\\'")}',
-                eventName: '${(postbackMapping?.eventName || 'event').replace(/'/g, "\\'")}',
-                offerId: '${(postbackMapping?.offerId || 'offer_id').replace(/'/g, "\\'")}',
-                ipAddress: '${(postbackMapping?.ipAddress || 'ip').replace(/'/g, "\\'")}',
-                timestamp: '${(postbackMapping?.timestamp || 'tdate').replace(/'/g, "\\'")}'
-            },
-
-            events: {
-${eventsStr}
-            },
-
-            branding: {
-                logoText: '${(branding?.logoText || name).replace(/'/g, "\\'")}',
-                tagline: '${(branding?.tagline || '').replace(/'/g, "\\'")}',
-                campaignDisplayName: '${(branding?.campaignDisplayName || name + ' Offer').replace(/'/g, "\\'")}'
-            },
-
-            userInput: {
-                fieldType: '${(userInput?.fieldType || 'mobile').replace(/'/g, "\\'")}',
-                extractMobileFromUPI: true,
-
-                mobile: {
-                    label: 'Your Mobile Number',
-                    placeholder: 'Enter 10-digit mobile number',
-                    maxLength: 10,
-                    pattern: '[0-9]{10}',
-                    errorMessage: 'Please enter a valid 10-digit mobile number'
-                },
-
-                upi: {
-                    label: 'Your UPI ID',
-                    placeholder: 'Enter your UPI ID (e.g., 9876543210@paytm)',
-                    maxLength: 50,
-                    pattern: '[a-zA-Z0-9.\\\\\\\\-_]{2,}@[a-zA-Z]{2,}',
-                    errorMessage: 'Please enter a valid UPI ID'
-                }
-            },
-
-            telegram: {
-                botUsername: 'ncearnings123bot',
-                welcomeMessage: {
-                    title: 'Welcome to ${name.replace(/'/g, "\\'")} Campaign!',
-                    description: 'To register and get notifications:'
-                },
-                notification: {
-                    title: 'NEW CASHBACK RECEIVED!',
-                    showCumulativeEarnings: true,
-                    footer: 'Powered by @NC Earnings'
-                },
-                help: {
-                    title: '${name.replace(/'/g, "\\'")} Help',
-                    howItWorks: [
-                        'Register with your UPI ID using /start YOUR_UPI_ID',
-                        'Complete the ${name.replace(/'/g, "\\'")} offer',
-                        'Get notified when your postback arrives',
-                        'Check your wallet for earnings'
-                    ]
-                }
-            },
-
-            settings: {
-                enableDuplicateDetection: false,
-                verboseLogging: true,
-                timezone: 'Asia/Kolkata',
-                dateLocale: 'en-IN',
-                currency: '${(settings?.currency || '₹').replace(/'/g, "\\'")}',
-                minWithdrawal: ${parseInt(settings?.minWithdrawal) || 30}
-            }
-        }`;
-
-    const newContent = replaceCampaignBlock(fileContent, currentSlug, campaignStr);
-
-    if (!newContent) {
-      return res.status(500).json({ success: false, message: 'Could not find existing campaign block to replace' });
-    }
-
-    fs.writeFileSync(configPath, newContent, 'utf8');
-
-    // Reload cache
-    delete require.cache[require.resolve('../config/campaigns.config')];
-    if (require.cache[require.resolve('../config/campaign-config')]) {
-      delete require.cache[require.resolve('../config/campaign-config')];
-    }
-    const updatedConfig = require('../config/campaigns.config');
-    Object.assign(campaignsConfig, updatedConfig);
 
     res.json({
       success: true,
@@ -1018,100 +851,12 @@ router.delete('/campaigns/:slug', adminMiddleware, async (req, res) => {
   try {
     const { slug } = req.params;
 
-    // Validate campaign exists
-    const campaign = campaignsConfig.getCampaignStrict(slug);
+    const campaign = await Campaign.findOneAndDelete({ slug });
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
 
-    const configPath = path.join(__dirname, '..', 'config', 'campaigns.config.js');
-    let fileContent = fs.readFileSync(configPath, 'utf8');
-
-    // Robust function to remove the campaign block
-    function removeCampaignBlock(content, searchSlug) {
-      const regex = new RegExp(`slug:\\s*['"]${searchSlug.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')}['"]`);
-      const match = content.match(regex);
-      if (!match) return null;
-
-      const slugIndex = match.index;
-
-      let startIdx = slugIndex;
-      while (startIdx >= 0 && content[startIdx] !== '{') {
-        startIdx--;
-      }
-      if (startIdx < 0) return null;
-
-      let endIdx = startIdx;
-      let braceCount = 0;
-      let inString = false;
-      let stringChar = '';
-      let isEscaped = false;
-
-      for (let i = startIdx; i < content.length; i++) {
-        const char = content[i];
-
-        if (inString) {
-          if (isEscaped) {
-            isEscaped = false;
-          } else if (char === '\\\\') {
-            isEscaped = true;
-          } else if (char === stringChar) {
-            inString = false;
-          }
-        } else {
-          if (char === "'" || char === '"' || char === '\`') {
-            inString = true;
-            stringChar = char;
-          } else if (char === '{') {
-            braceCount++;
-          } else if (char === '}') {
-            braceCount--;
-            if (braceCount === 0) {
-              endIdx = i;
-              break;
-            }
-          }
-        }
-      }
-
-      if (braceCount !== 0) return null;
-
-      // Look for a trailing comma
-      let nextIdx = endIdx + 1;
-      while (nextIdx < content.length && /\s/.test(content[nextIdx])) {
-        nextIdx++;
-      }
-      if (content[nextIdx] === ',') {
-        endIdx = nextIdx;
-      } else {
-        // If no trailing comma, look for a leading comma
-        let prevIdx = startIdx - 1;
-        while (prevIdx >= 0 && /\s/.test(content[prevIdx])) {
-          prevIdx--;
-        }
-        if (content[prevIdx] === ',') {
-          startIdx = prevIdx;
-        }
-      }
-
-      return content.substring(0, startIdx) + content.substring(endIdx + 1);
-    }
-
-    const newContent = removeCampaignBlock(fileContent, slug);
-
-    if (!newContent) {
-      return res.status(500).json({ success: false, message: 'Could not find campaign block to remove' });
-    }
-
-    fs.writeFileSync(configPath, newContent, 'utf8');
-
-    // Reload cache
-    delete require.cache[require.resolve('../config/campaigns.config')];
-    if (require.cache[require.resolve('../config/campaign-config')]) {
-      delete require.cache[require.resolve('../config/campaign-config')];
-    }
-    const updatedConfig = require('../config/campaigns.config');
-    Object.assign(campaignsConfig, updatedConfig);
+    console.log(`🗑️ Campaign deleted: ${campaign.name} (slug: ${slug})`);
 
     res.json({
       success: true,

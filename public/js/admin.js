@@ -412,6 +412,8 @@ async function fetchStats() {
         if (data.success) {
             totalUsersEl.textContent = data.data.totalUsers;
             totalEarningsEl.textContent = data.data.totalEarnings;
+            const walletEl = document.getElementById('totalWalletBalance');
+            if (walletEl) walletEl.textContent = data.data.totalWalletBalance || 0;
 
             if (statsTableBody) {
                 statsTableBody.innerHTML = [

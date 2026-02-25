@@ -1,24 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const campaignConfig = require('../config/campaigns.config');
-const CampaignState = require('../models/CampaignState');
+const Campaign = require('../models/Campaign');
 
 // Public config endpoint (sanitized - no secrets)
 router.get('/public', async (req, res) => {
     try {
         const { slug } = req.query;
-        // Strict Lookup
-        let activeCampaign = campaignConfig.getCampaignStrict(slug);
+        // Strict Lookup from DB
+        let activeCampaign = await Campaign.findOne({ slug });
 
         if (!activeCampaign) {
             return res.status(404).json({ error: 'Campaign not found' });
         }
 
-        // DB State Check
-        const state = await CampaignState.findOne({ slug });
-        if (state && !state.isActive) {
+        // Check if campaign is suspended
+        if (!activeCampaign.isActive) {
             return res.status(503).json({ error: 'Campaign is suspended' });
         }
+
+        // Convert events array to object for frontend compatibility
+        const eventsObj = activeCampaign.getEventsObject();
 
         // Return only public-safe configuration
         const publicConfig = {
@@ -27,20 +28,15 @@ router.get('/public', async (req, res) => {
                 displayTitle: `${activeCampaign.name} Campaign`,
                 description: activeCampaign.description,
                 isActive: activeCampaign.isActive,
-                isActive: activeCampaign.isActive,
                 branding: activeCampaign.branding,
                 process: activeCampaign.process
             },
             userInput: activeCampaign.userInput,
-            userInput: activeCampaign.userInput,
             affiliate: {
-                // Return generic structure or empty if handled via specific endpoints
-                // The frontend likely expects these, but if they are inside a function in config, we can't send them easily.
-                // We will rely on the frontend loader to request a link generation or we will refactor config later.
-                // For now, returning safe defaults from activeCampaign if available, or empty.
-                ...activeCampaign.affiliate
+                baseUrl: activeCampaign.affiliate.affiliateUrl || activeCampaign.affiliate.baseUrl,
+                clickIdParam: activeCampaign.affiliate.userIdParam || activeCampaign.affiliate.clickIdParam
             },
-            ui: activeCampaign.ui || {
+            ui: {
                 submitButtonText: 'Proceed to Offer',
                 walletLinkText: 'Check Earnings / Wallet',
                 messages: {
@@ -51,7 +47,6 @@ router.get('/public', async (req, res) => {
                 }
             },
             payments: {
-                // Extract currency/minWithdrawal from settings if available
                 currency: activeCampaign.settings.currency || '₹',
                 minWithdrawal: activeCampaign.settings.minWithdrawal || 30
             }
@@ -65,7 +60,7 @@ router.get('/public', async (req, res) => {
 });
 
 // Generate affiliate link securely using server-side logic
-router.get('/generate-link', (req, res) => {
+router.get('/generate-link', async (req, res) => {
     try {
         const { slug, userId } = req.query;
 
@@ -73,7 +68,7 @@ router.get('/generate-link', (req, res) => {
             return res.status(400).json({ error: 'Missing slug or userId' });
         }
 
-        const campaign = campaignConfig.getCampaignStrict(slug);
+        const campaign = await Campaign.findOne({ slug });
 
         if (!campaign) {
             return res.status(404).json({ error: 'Campaign not found' });
@@ -83,17 +78,14 @@ router.get('/generate-link', (req, res) => {
             return res.status(403).json({ error: 'Campaign is not active' });
         }
 
-        // Use the campaign's buildLink function if it exists
-        if (campaign.affiliate && typeof campaign.affiliate.buildLink === 'function') {
-            const link = campaign.affiliate.buildLink(userId);
-            return res.json({ success: true, link });
-        } else {
-            // Fallback if no buildLink function is defined (should not happen for properly configured campaigns)
-            // But we can construct a basic one based on standard params if needed, or return error.
-            // For safety and strictness, let's return an error if buildLink is missing, encouraging proper config.
-            console.warn(`Campaign ${slug} missing buildLink function.`);
+        // Use the campaign's buildLink method
+        const link = campaign.buildLink(userId);
+        if (!link) {
+            console.warn(`Campaign ${slug} missing affiliate URL.`);
             return res.status(500).json({ error: 'Link generation not configured for this campaign' });
         }
+
+        return res.json({ success: true, link });
 
     } catch (error) {
         console.error('Error generating link:', error);
