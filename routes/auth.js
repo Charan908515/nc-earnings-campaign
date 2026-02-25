@@ -70,6 +70,30 @@ router.post('/register', async (req, res) => {
             }
         }
 
+        // Check if another user already exists with the same mobile number
+        if (mobileNumber) {
+            const existingByMobile = await User.findOne({ mobileNumber });
+            if (existingByMobile && existingByMobile.upiId !== upiId) {
+                // Mask the existing UPI ID for privacy (e.g., 91****3854@pa**m)
+                const existingUpi = existingByMobile.upiId;
+                const [upiUser, upiProvider] = existingUpi.split('@');
+                let maskedUser = upiUser;
+                if (upiUser.length > 4) {
+                    maskedUser = upiUser.substring(0, 2) + '****' + upiUser.substring(upiUser.length - 4);
+                }
+                let maskedProvider = upiProvider || '';
+                if (maskedProvider.length > 3) {
+                    maskedProvider = maskedProvider.substring(0, 2) + '**' + maskedProvider.substring(maskedProvider.length - 1);
+                }
+                const maskedUpi = maskedUser + '@' + maskedProvider;
+
+                return res.status(400).json({
+                    success: false,
+                    message: `You are already registered with UPI ID: ${maskedUpi}. Please login with that UPI ID instead.`
+                });
+            }
+        }
+
         // Create new user with UPI ID as primary identifier
         const user = new User({
             upiId: upiId,           // Primary identifier
