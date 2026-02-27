@@ -1,14 +1,13 @@
-const mongoose = require('mongoose');
+const { sequelize } = require('./sequelize');
+require('../models');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ MongoDB Connected Successfully');
+    await sequelize.authenticate();
+    await sequelize.sync();
+    console.log('✅ MySQL Connected Successfully');
   } catch (error) {
-    console.error('❌ MongoDB Connection Error:', error.message);
+    console.error('❌ MySQL Connection Error:', error.message);
     process.exit(1);
   }
 };

@@ -1,5 +1,5 @@
 /**
- * Seed existing campaigns from campaigns.config.js into MongoDB.
+ * Seed existing campaigns from campaigns.config.js into the SQL database.
  * Only runs if no campaigns exist in the DB yet.
  */
 const Campaign = require('../models/Campaign');
@@ -7,7 +7,7 @@ const campaignsConfig = require('../config/campaigns.config');
 
 async function seedCampaigns() {
     try {
-        const count = await Campaign.countDocuments();
+        const count = await Campaign.count();
         if (count > 0) {
             console.log(`📋 ${count} campaign(s) already in DB, skipping seed.`);
             return;
@@ -48,7 +48,7 @@ async function seedCampaigns() {
                 }
             }
 
-            const campaignDoc = new Campaign({
+            const campaignData = {
                 id: camp.id,
                 slug: camp.slug,
                 name: camp.name,
@@ -81,9 +81,9 @@ async function seedCampaigns() {
                 userInput: camp.userInput || {},
                 telegram: camp.telegram || {},
                 settings: camp.settings || {}
-            });
+            };
 
-            await campaignDoc.save();
+            await Campaign.create(campaignData);
             console.log(`  ✅ Seeded: ${camp.name} (slug: ${camp.slug})`);
         }
 

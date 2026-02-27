@@ -1,75 +1,82 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('../config/sequelize');
+const { sequelize } = require('../config/sequelize');
+const { ObjectId } = require('bson');
 
-const earningSchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    mobileNumber: {
-        type: String,
-        required: true
-    },
-    eventType: {
-        type: String,
-        required: true,
-        enum: (() => {
-            // Dynamically load all event displayNames from campaigns config
-            const campaignsConfig = require('../config/campaigns.config');
-            const eventNames = [];
-            for (const campaign of campaignsConfig.campaigns) {
-                if (campaign.events) {
-                    for (const eventKey of Object.keys(campaign.events)) {
-                        const displayName = campaign.events[eventKey].displayName;
-                        if (displayName && !eventNames.includes(displayName)) {
-                            eventNames.push(displayName);
-                        }
-                    }
-                }
-            }
-            return eventNames;
-        })()
-    },
-    payment: {
-        type: Number,
-        required: true
-    },
-    offerId: {
-        type: String,
-        default: ''
-    },
-    subId: {
-        type: String,
-        default: ''
-    },
-    ipAddress: {
-        type: String,
-        default: ''
-    },
-    clickTime: {
-        type: Date,
-        default: null
-    },
-    conversionTime: {
-        type: Date,
-        default: null
-    },
-    campaignSlug: {
-        type: String,
-        default: ''
-    },
-    campaignName: {
-        type: String,
-        default: ''
-    },
-    walletDisplayName: {
-        type: String,
-        default: ''
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+const Earning = sequelize.define('Earning', {
+  id: {
+    type: DataTypes.STRING(24),
+    primaryKey: true,
+    defaultValue: () => new ObjectId().toHexString()
+  },
+  userId: {
+    type: DataTypes.STRING(24),
+    allowNull: false
+  },
+  mobileNumber: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  eventType: {
+    type: DataTypes.STRING(120),
+    allowNull: false
+  },
+  payment: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  offerId: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    defaultValue: ''
+  },
+  subId: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    defaultValue: ''
+  },
+  ipAddress: {
+    type: DataTypes.STRING(64),
+    allowNull: true,
+    defaultValue: ''
+  },
+  clickTime: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null
+  },
+  conversionTime: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null
+  },
+  campaignSlug: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    defaultValue: ''
+  },
+  campaignName: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+    defaultValue: ''
+  },
+  walletDisplayName: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+    defaultValue: ''
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  }
+}, {
+  tableName: 'earnings',
+  timestamps: false,
+  indexes: [
+    { fields: ['userId'] },
+    { fields: ['createdAt'] },
+    { fields: ['campaignSlug'] }
+  ]
 });
 
-module.exports = mongoose.model('Earning', earningSchema);
+module.exports = Earning;

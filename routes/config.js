@@ -7,7 +7,7 @@ router.get('/public', async (req, res) => {
     try {
         const { slug } = req.query;
         // Strict Lookup from DB
-        let activeCampaign = await Campaign.findOne({ slug });
+        let activeCampaign = await Campaign.findOne({ where: { slug } });
 
         if (!activeCampaign) {
             return res.status(404).json({ error: 'Campaign not found' });
@@ -68,7 +68,7 @@ router.get('/generate-link', async (req, res) => {
             return res.status(400).json({ error: 'Missing slug or userId' });
         }
 
-        const campaign = await Campaign.findOne({ slug });
+        const campaign = await Campaign.findOne({ where: { slug } });
 
         if (!campaign) {
             return res.status(404).json({ error: 'Campaign not found' });

@@ -27,7 +27,7 @@ function extractMobileFromUPI(upiId, campaign) {
 router.post('/register', async (req, res) => {
     try {
         const { upiId, password } = req.body;
-        const activeCampaign = await Campaign.findOne({ isActive: true });
+        const activeCampaign = await Campaign.findOne({ where: { isActive: true } });
 
         if (!activeCampaign) {
             return res.status(500).json({ success: false, message: 'No active campaign found' });
@@ -56,7 +56,7 @@ router.post('/register', async (req, res) => {
         }
 
         // Check if user already exists (by UPI ID) - Generic error message for security
-        const existingUser = await User.findOne({ upiId });
+        const existingUser = await User.findOne({ where: { upiId } });
         if (existingUser) {
             return res.status(400).json({ success: false, message: 'Registration failed. Please try a different UPI ID' });
         }
@@ -73,7 +73,7 @@ router.post('/register', async (req, res) => {
 
         // Check if another user already exists with the same mobile number
         if (mobileNumber) {
-            const existingByMobile = await User.findOne({ mobileNumber });
+            const existingByMobile = await User.findOne({ where: { mobileNumber } });
             if (existingByMobile && existingByMobile.upiId !== upiId) {
                 // Mask the existing UPI ID for privacy (e.g., 91****3854@pa**m)
                 const existingUpi = existingByMobile.upiId;
@@ -96,19 +96,18 @@ router.post('/register', async (req, res) => {
         }
 
         // Create new user with UPI ID as primary identifier
-        const user = new User({
+        const user = await User.create({
             upiId: upiId,           // Primary identifier
             mobileNumber: mobileNumber || upiId,  // For affiliate links or fallback
             password,
             name: req.body.name || 'user' // Default to 'user' if not provided
         });
-        await user.save();
 
         // Log user registration details
         console.log('\n' + '='.repeat(60));
         console.log('✅ NEW USER REGISTERED');
         console.log('='.repeat(60));
-        console.log('🆔 MongoDB ID:', user._id);
+        console.log('🆔 User ID:', user.id);
         console.log('👤 Name:', user.name);
         console.log('💳 UPI ID:', user.upiId);
         console.log('📱 Mobile Number:', user.mobileNumber);
@@ -116,26 +115,26 @@ router.post('/register', async (req, res) => {
         console.log('📅 Registration Time:', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
         console.log('='.repeat(60) + '\n');
 
-        // Generate JWT token with longer expiration (30 days)
+        // Generate JWT token with expiration (15 days)
         const token = jwt.sign(
-            { userId: user._id, upiId: user.upiId },
+            { userId: user.id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '30d' }
+            { expiresIn: '15d' }
         );
 
-        // Set token as HTTP-only cookie
+        // Set token as HTTP-only cookie (15 days)
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // HTTPS only in production
             sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+            maxAge: 15 * 24 * 60 * 60 * 1000 // 15 days
         });
 
         res.status(201).json({
             success: true,
             message: 'Registration successful',
             user: {
-                id: user._id,
+                id: user.id,
                 name: user.name,
                 upiId: user.upiId,
                 mobileNumber: user.mobileNumber,
@@ -167,7 +166,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Find user by UPI ID - Use generic error message
-        const user = await User.findOne({ upiId });
+        const user = await User.findOne({ where: { upiId } });
         if (!user) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
@@ -186,26 +185,26 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
-        // Generate JWT token with longer expiration (30 days)
+        // Generate JWT token with expiration (15 days)
         const token = jwt.sign(
-            { userId: user._id, upiId: user.upiId },
+            { userId: user.id, upiId: user.upiId },
             process.env.JWT_SECRET,
-            { expiresIn: '30d' }
+            { expiresIn: '15d' }
         );
 
-        // Set token as HTTP-only cookie
+        // Set token as HTTP-only cookie (15 days)
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // HTTPS only in production
             sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+            maxAge: 15 * 24 * 60 * 60 * 1000 // 15 days
         });
 
         res.json({
             success: true,
             message: 'Login successful',
             user: {
-                id: user._id,
+                id: user.id,
                 upiId: user.upiId,
                 mobileNumber: user.mobileNumber,
                 totalEarnings: user.totalEarnings,

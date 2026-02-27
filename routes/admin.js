@@ -8,6 +8,7 @@ const Withdrawal = require('../models/Withdrawal');
 const CampaignState = require('../models/CampaignState');
 const Campaign = require('../models/Campaign');
 const { sendWithdrawalApprovalNotification, sendWithdrawalRejectionNotification } = require('../config/telegram');
+const { Op, sequelize } = require('../config/sequelize');
 
 // Admin login endpoint
 router.post('/login', async (req, res) => {
@@ -16,11 +17,11 @@ router.post('/login', async (req, res) => {
 
     // Validate credentials
     if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-      // Generate JWT token with admin role - Long expiry (30 days)
+      // Generate JWT token with admin role - Expiry (15 days)
       const token = jwt.sign(
         { role: 'admin', username },
         process.env.JWT_SECRET,
-        { expiresIn: '30d' }
+        { expiresIn: '15d' }
       );
 
       // Set token as HTTP-only cookie
@@ -28,7 +29,7 @@ router.post('/login', async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        maxAge: 15 * 24 * 60 * 60 * 1000 // 15 days
       });
 
       res.json({
@@ -49,13 +50,17 @@ router.post('/login', async (req, res) => {
 // Get all pending withdrawals
 router.get('/withdrawals', adminMiddleware, async (req, res) => {
   try {
-    const withdrawals = await Withdrawal.find()
-      .populate('userId', 'name mobileNumber')
-      .sort({ requestedAt: -1 });
+    const withdrawals = await Withdrawal.findAll({
+      include: [{ model: User, attributes: ['name', 'mobileNumber'] }],
+      order: [['requestedAt', 'DESC']]
+    });
 
     res.json({
       success: true,
-      data: withdrawals
+      data: withdrawals.map(w => ({
+        ...w.toJSON(),
+        amount: Number(w.amount)
+      }))
     });
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
@@ -73,7 +78,7 @@ router.post('/withdrawals/:id/approve', adminMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid withdrawal ID' });
     }
 
-    const withdrawal = await Withdrawal.findById(req.params.id);
+    const withdrawal = await Withdrawal.findByPk(req.params.id);
 
     if (!withdrawal) {
       return res.status(404).json({ success: false, message: 'Withdrawal not found' });
@@ -95,32 +100,23 @@ router.post('/withdrawals/:id/approve', adminMiddleware, async (req, res) => {
     }
 
     // Use atomic update to prevent race conditions
-    const updateResult = await Withdrawal.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        status: 'pending' // Only update if still pending
-      },
-      {
-        $set: {
-          status: 'completed',
-          processedAt: new Date()
-        }
-      },
-      { new: true }
-    );
-
-    if (!updateResult) {
-      console.log(`⚠️ Withdrawal status changed during approval: ${req.params.id}`);
-      return res.status(409).json({
-        success: false,
-        message: 'Withdrawal was already processed by another admin'
-      });
-    }
+    let updateResult;
+    await sequelize.transaction(async (t) => {
+      const locked = await Withdrawal.findByPk(req.params.id, { transaction: t, lock: t.LOCK.UPDATE });
+      if (!locked || locked.status !== 'pending') {
+        const err = new Error('Withdrawal was already processed by another admin');
+        err.status = 409;
+        throw err;
+      }
+      locked.status = 'completed';
+      locked.processedAt = new Date();
+      updateResult = await locked.save({ transaction: t });
+    });
 
     console.log(`✅ Withdrawal approved: ₹${withdrawal.amount} to ${withdrawal.upiId} for ${withdrawal.mobileNumber}`);
 
     // Get user's current balance for notification
-    const user = await User.findById(withdrawal.userId);
+    const user = await User.findByPk(withdrawal.userId);
     const currentBalance = user ? user.availableBalance : 0;
 
     // Send Telegram notification to user
@@ -157,7 +153,7 @@ router.post('/withdrawals/:id/reject', adminMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid withdrawal ID' });
     }
 
-    const withdrawal = await Withdrawal.findById(req.params.id);
+    const withdrawal = await Withdrawal.findByPk(req.params.id);
 
     if (!withdrawal) {
       return res.status(404).json({ success: false, message: 'Withdrawal not found' });
@@ -173,37 +169,26 @@ router.post('/withdrawals/:id/reject', adminMiddleware, async (req, res) => {
     }
 
     // SECURITY CHECK 3: Use atomic operations to prevent race conditions
-    const user = await User.findById(withdrawal.userId);
+    const user = await User.findByPk(withdrawal.userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Atomically update withdrawal status
-    const updateResult = await Withdrawal.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        status: 'pending' // Only update if still pending
-      },
-      {
-        $set: {
-          status: 'rejected',
-          processedAt: new Date()
-        }
-      },
-      { new: true }
-    );
+    let updateResult;
+    await sequelize.transaction(async (t) => {
+      const locked = await Withdrawal.findByPk(req.params.id, { transaction: t, lock: t.LOCK.UPDATE });
+      if (!locked || locked.status !== 'pending') {
+        const err = new Error('Withdrawal was already processed by another admin');
+        err.status = 409;
+        throw err;
+      }
+      locked.status = 'rejected';
+      locked.processedAt = new Date();
+      updateResult = await locked.save({ transaction: t });
 
-    if (!updateResult) {
-      console.log(`⚠️ Withdrawal status changed during rejection: ${req.params.id}`);
-      return res.status(409).json({
-        success: false,
-        message: 'Withdrawal was already processed by another admin'
-      });
-    }
-
-    // Return amount to user's balance
-    user.availableBalance += withdrawal.amount;
-    await user.save();
+      user.availableBalance = Number(user.availableBalance) + Number(withdrawal.amount);
+      await user.save({ transaction: t });
+    });
 
     console.log(`❌ Withdrawal rejected: ₹${withdrawal.amount} returned to ${withdrawal.mobileNumber}`);
 
@@ -225,11 +210,14 @@ router.post('/withdrawals/:id/reject', adminMiddleware, async (req, res) => {
       message: 'Withdrawal rejected and amount returned to user',
       data: {
         withdrawal: updateResult,
-        refundedAmount: withdrawal.amount,
-        userNewBalance: user.availableBalance
+        refundedAmount: Number(withdrawal.amount),
+        userNewBalance: Number(user.availableBalance)
       }
     });
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
     if (process.env.NODE_ENV !== 'production') {
       console.error('Withdrawal rejection error:', error);
     }
@@ -287,19 +275,18 @@ router.get('/stats', adminMiddleware, async (req, res) => {
 
     // Helper for aggregations
     const getStats = async (startDate, endDate) => {
-      const matchStage = { createdAt: { $gte: startDate } };
-      if (endDate) matchStage.createdAt.$lte = endDate;
+      const where = { createdAt: { [Op.gte]: startDate } };
+      if (endDate) where.createdAt[Op.lte] = endDate;
 
-      const stats = await Earning.aggregate([
-        { $match: matchStage },
-        {
-          $group: {
-            _id: '$eventType',
-            count: { $sum: 1 },
-            total: { $sum: '$payment' }
-          }
-        }
-      ]);
+      const stats = await Earning.findAll({
+        where,
+        attributes: [
+          'eventType',
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+          [sequelize.fn('SUM', sequelize.col('payment')), 'total']
+        ],
+        group: ['eventType']
+      });
 
       // Calculate totals and format breakdown
       const result = {
@@ -309,10 +296,12 @@ router.get('/stats', adminMiddleware, async (req, res) => {
       };
 
       stats.forEach(s => {
-        result.count += s.count;
-        result.total += s.total;
-        const type = s._id || 'Unknown';
-        result.breakdown[type] = s.count;
+        const count = Number(s.get('count') || 0);
+        const total = Number(s.get('total') || 0);
+        result.count += count;
+        result.total += total;
+        const type = s.get('eventType') || 'Unknown';
+        result.breakdown[type] = count;
       });
 
       return result;
@@ -328,11 +317,11 @@ router.get('/stats', adminMiddleware, async (req, res) => {
       statsYesterday,
       statsMonth
     ] = await Promise.all([
-      User.countDocuments(),
-      Earning.aggregate([{ $group: { _id: null, total: { $sum: '$payment' } } }]),
-      Withdrawal.countDocuments({ status: 'pending' }),
-      Withdrawal.aggregate([{ $match: { status: 'pending' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
-      User.aggregate([{ $group: { _id: null, total: { $sum: '$availableBalance' } } }]),
+      User.count(),
+      Earning.sum('payment'),
+      Withdrawal.count({ where: { status: 'pending' } }),
+      Withdrawal.sum('amount', { where: { status: 'pending' } }),
+      User.sum('availableBalance'),
       getStats(todayStart),
       getStats(yesterdayStart, yesterdayEnd),
       getStats(monthStart)
@@ -342,10 +331,10 @@ router.get('/stats', adminMiddleware, async (req, res) => {
       success: true,
       data: {
         totalUsers,
-        totalEarnings: totalEarningsResult[0]?.total || 0,
-        totalWalletBalance: totalWalletResult[0]?.total || 0,
+        totalEarnings: Number(totalEarningsResult || 0),
+        totalWalletBalance: Number(totalWalletResult || 0),
         pendingWithdrawals,
-        totalWithdrawalAmount: totalWithdrawalResult[0]?.total || 0,
+        totalWithdrawalAmount: Number(totalWithdrawalResult || 0),
         postbacks: {
           today: { count: statsToday.count, breakdown: statsToday.breakdown },
           yesterday: { count: statsYesterday.count, breakdown: statsYesterday.breakdown },
@@ -367,9 +356,10 @@ router.get('/stats', adminMiddleware, async (req, res) => {
 // Get all users
 router.get('/users', adminMiddleware, async (req, res) => {
   try {
-    const users = await User.find()
-      .sort({ createdAt: -1 })
-      .select('-password'); // Exclude password from result
+    const users = await User.findAll({
+      order: [['createdAt', 'DESC']],
+      attributes: { exclude: ['password'] }
+    });
 
     res.json({
       success: true,
@@ -384,7 +374,10 @@ router.get('/users', adminMiddleware, async (req, res) => {
 // Unsuspend user
 router.post('/users/:id/unsuspend', adminMiddleware, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.params.id, { isSuspended: false });
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.isSuspended = false;
+    await user.save();
     res.json({ success: true, message: 'User activated successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -394,7 +387,10 @@ router.post('/users/:id/unsuspend', adminMiddleware, async (req, res) => {
 // Suspend user
 router.post('/users/:id/suspend', adminMiddleware, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.params.id, { isSuspended: true });
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.isSuspended = true;
+    await user.save();
     res.json({ success: true, message: 'User suspended successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -406,7 +402,7 @@ router.delete('/users/:id', adminMiddleware, async (req, res) => {
   try {
     // Optional: Check if user has pending withdrawals?
     // For now, simple delete
-    await User.findByIdAndDelete(req.params.id);
+    await User.destroy({ where: { id: req.params.id } });
     res.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -422,7 +418,7 @@ router.post('/users/:id/balance', adminMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid balance amount' });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findByPk(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -440,10 +436,12 @@ router.post('/users/:id/balance', adminMiddleware, async (req, res) => {
 // Get payment history (successful withdrawals only)
 router.get('/history', adminMiddleware, async (req, res) => {
   try {
-    const successfulWithdrawals = await Withdrawal.find({ status: 'completed' })
-      .sort({ processedAt: -1 })
-      .populate('userId', 'name')
-      .select('userId mobileNumber amount upiId requestedAt processedAt');
+    const successfulWithdrawals = await Withdrawal.findAll({
+      where: { status: 'completed' },
+      order: [['processedAt', 'DESC']],
+      include: [{ model: User, attributes: ['name'] }],
+      attributes: ['id', 'userId', 'mobileNumber', 'amount', 'upiId', 'requestedAt', 'processedAt']
+    });
 
     res.json({
       success: true,
@@ -463,13 +461,14 @@ router.get('/logs', adminMiddleware, async (req, res) => {
     const skip = (page - 1) * limit;
 
     const [logs, total] = await Promise.all([
-      Earning.find()
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate('userId', 'name')
-        .select('userId createdAt eventType mobileNumber payment offerId campaignName'),
-      Earning.countDocuments()
+      Earning.findAll({
+        order: [['createdAt', 'DESC']],
+        offset: skip,
+        limit,
+        include: [{ model: User, attributes: ['name'] }],
+        attributes: ['id', 'userId', 'createdAt', 'eventType', 'mobileNumber', 'payment', 'offerId', 'campaignName']
+      }),
+      Earning.count()
     ]);
 
     // Format logs with campaign name
@@ -477,9 +476,9 @@ router.get('/logs', adminMiddleware, async (req, res) => {
       sno: skip + index + 1,
       time: log.createdAt,
       eventName: log.eventType,
-      userName: log.userId?.name || 'Unknown',
+      userName: log.User?.name || 'Unknown',
       upiId: log.mobileNumber,
-      payment: log.payment,
+      payment: Number(log.payment),
       offerId: log.offerId
     }));
 
@@ -506,7 +505,7 @@ router.get('/logs', adminMiddleware, async (req, res) => {
 // Get all campaigns with status
 router.get('/campaigns', adminMiddleware, async (req, res) => {
   try {
-    const campaigns = await Campaign.find().sort({ createdAt: -1 });
+    const campaigns = await Campaign.findAll({ order: [['createdAt', 'DESC']] });
 
     const data = campaigns.map(camp => ({
       slug: camp.slug,
@@ -528,11 +527,12 @@ router.post('/campaigns/:slug/toggle', adminMiddleware, async (req, res) => {
     const { slug } = req.params;
     const { isActive } = req.body;
 
-    const campaign = await Campaign.findOneAndUpdate(
-      { slug },
-      { isActive },
-      { new: true }
-    );
+    const campaign = await Campaign.findOne({ where: { slug } });
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
+    campaign.isActive = isActive;
+    await campaign.save();
 
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
@@ -565,7 +565,7 @@ router.post('/campaigns', adminMiddleware, async (req, res) => {
     }
 
     // Check for duplicate slug/id
-    const existing = await Campaign.findOne({ $or: [{ slug }, { id }] });
+    const existing = await Campaign.findOne({ where: { [Op.or]: [{ slug }, { id }] } });
     if (existing) {
       return res.status(400).json({ success: false, message: 'A campaign with this slug or id already exists' });
     }
@@ -584,7 +584,7 @@ router.post('/campaigns', adminMiddleware, async (req, res) => {
     const affUrl = affiliate?.affiliateUrl || '';
     const userIdParam = affiliate?.userIdParam || 'p1';
 
-    const campaign = new Campaign({
+    const campaign = await Campaign.create({
       id,
       slug,
       name,
@@ -663,7 +663,6 @@ router.post('/campaigns', adminMiddleware, async (req, res) => {
       }
     });
 
-    await campaign.save();
     console.log(`✅ New campaign added: ${name} (slug: ${slug})`);
 
     res.json({
@@ -683,7 +682,7 @@ router.post('/campaigns', adminMiddleware, async (req, res) => {
 router.get('/campaigns/:slug', adminMiddleware, async (req, res) => {
   try {
     const { slug } = req.params;
-    const campaign = await Campaign.findOne({ slug });
+    const campaign = await Campaign.findOne({ where: { slug } });
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
@@ -691,7 +690,7 @@ router.get('/campaigns/:slug', adminMiddleware, async (req, res) => {
     // Build a preview of the affiliate URL
     let affiliateUrlPreview = campaign.affiliate.affiliateUrl || campaign.affiliate.baseUrl;
 
-    const dataToSend = campaign.toObject();
+    const dataToSend = campaign.toJSON();
     dataToSend.affiliate.affiliateUrl = affiliateUrlPreview;
 
     // Convert events array back to the format the admin frontend expects
@@ -725,7 +724,7 @@ router.put('/campaigns/:slug', adminMiddleware, async (req, res) => {
 
     // Check if new slug already exists for a DIFFERENT campaign
     if (slug !== currentSlug) {
-      const existingBySlug = await Campaign.findOne({ slug });
+      const existingBySlug = await Campaign.findOne({ where: { slug } });
       if (existingBySlug) {
         return res.status(400).json({ success: false, message: 'Another campaign with this slug already exists' });
       }
@@ -824,15 +823,12 @@ router.put('/campaigns/:slug', adminMiddleware, async (req, res) => {
       }
     };
 
-    const campaign = await Campaign.findOneAndUpdate(
-      { slug: currentSlug },
-      updateData,
-      { new: true }
-    );
+    const campaign = await Campaign.findOne({ where: { slug: currentSlug } });
 
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
+    await campaign.update(updateData);
 
     res.json({
       success: true,
@@ -851,10 +847,11 @@ router.delete('/campaigns/:slug', adminMiddleware, async (req, res) => {
   try {
     const { slug } = req.params;
 
-    const campaign = await Campaign.findOneAndDelete({ slug });
+    const campaign = await Campaign.findOne({ where: { slug } });
     if (!campaign) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
+    await campaign.destroy();
 
     console.log(`🗑️ Campaign deleted: ${campaign.name} (slug: ${slug})`);
 

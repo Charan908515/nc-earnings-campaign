@@ -192,7 +192,8 @@ async function loadBalance() {
                 avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.data.name)}&background=ff6b35&color=fff`;
             }
 
-        } else {
+        } else if (data.message !== 'Session expired') {
+            // Only show this if it's not an auth expiry (auth expiry already triggers redirect in fetchAuth)
             showAlert('Failed to load balance');
         }
     } catch (error) {

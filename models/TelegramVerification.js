@@ -1,21 +1,38 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('../config/sequelize');
+const { sequelize } = require('../config/sequelize');
+const { ObjectId } = require('bson');
 
-const telegramVerificationSchema = new mongoose.Schema({
-    token: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true
-    },
-    upiId: {
-        type: String,
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-        expires: 300 // Token expires in 5 minutes
-    }
+const TelegramVerification = sequelize.define('TelegramVerification', {
+  id: {
+    type: DataTypes.STRING(24),
+    primaryKey: true,
+    defaultValue: () => new ObjectId().toHexString()
+  },
+  token: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    unique: true
+  },
+  upiId: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  expiresAt: {
+    type: DataTypes.DATE,
+    allowNull: false
+  }
+}, {
+  tableName: 'telegram_verifications',
+  timestamps: false,
+  indexes: [
+    { fields: ['token'] },
+    { fields: ['expiresAt'] }
+  ]
 });
 
-module.exports = mongoose.model('TelegramVerification', telegramVerificationSchema);
+module.exports = TelegramVerification;

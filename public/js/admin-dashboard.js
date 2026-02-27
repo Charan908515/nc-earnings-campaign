@@ -232,7 +232,7 @@ function displayUsers(users) {
         return;
     }
 
-    table.innerHTML = users.map((user, index) => `
+        table.innerHTML = users.map((user, index) => `
         <tr>
             <td>${index + 1}</td>
             <td>${user.mobileNumber}</td>
@@ -245,8 +245,8 @@ function displayUsers(users) {
             </td>
             <td>
                 ${user.isSuspended
-            ? `<button class="btn btn-success" onclick="toggleSuspend('${user._id}', false)" style="padding: 6px 12px; font-size: 13px;">Activate</button>`
-            : `<button class="btn btn-danger" onclick="toggleSuspend('${user._id}', true)" style="padding: 6px 12px; font-size: 13px;">Suspend</button>`
+            ? `<button class="btn btn-success" onclick="toggleSuspend('${user.id}', false)" style="padding: 6px 12px; font-size: 13px;">Activate</button>`
+            : `<button class="btn btn-danger" onclick="toggleSuspend('${user.id}', true)" style="padding: 6px 12px; font-size: 13px;">Suspend</button>`
         }
             </td>
         </tr>
@@ -314,10 +314,10 @@ function displayWithdrawals(withdrawals) {
                 <td>${withdrawal.upiId}</td>
                 <td>${formatDate(withdrawal.requestedAt)}</td>
                 <td>
-                    <button class="btn btn-success" onclick="approveWithdrawal('${withdrawal._id}')" style="margin-right: 8px; padding: 6px 12px; font-size: 13px;">
+                    <button class="btn btn-success" onclick="approveWithdrawal('${withdrawal.id}')" style="margin-right: 8px; padding: 6px 12px; font-size: 13px;">
                         Approve
                     </button>
-                    <button class="btn btn-danger" onclick="rejectWithdrawal('${withdrawal._id}')" style="padding: 6px 12px; font-size: 13px;">
+                    <button class="btn btn-danger" onclick="rejectWithdrawal('${withdrawal.id}')" style="padding: 6px 12px; font-size: 13px;">
                         Reject
                     </button>
                 </td>

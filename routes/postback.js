@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Earning = require('../models/Earning');
 const Campaign = require('../models/Campaign');
 const { sendUserNotification, sendChannelNotification } = require('../config/telegram');
+const { Op, sequelize } = require('../config/sequelize');
 
 // Postback receiver endpoint - Universal handler for any affiliate network
 router.get('/', async (req, res) => {
@@ -13,7 +14,9 @@ router.get('/', async (req, res) => {
         // Try to find campaign by offer_id first (more reliable), then fall back to cid
         let activeCampaign = null;
         if (offer_id) {
-            activeCampaign = await Campaign.findOne({ 'affiliate.offerId': Number(offer_id) });
+            activeCampaign = await Campaign.findOne({
+                where: sequelize.where(sequelize.json('affiliate.offerId'), Number(offer_id))
+            });
             if (activeCampaign) {
                 console.log(`🔍 Campaign detected by offer_id ${offer_id}: ${activeCampaign.name}`);
             }
@@ -22,7 +25,9 @@ router.get('/', async (req, res) => {
         // Fall back to cid if offer_id didn't match
         if (!activeCampaign) {
             activeCampaign = await Campaign.findOne({
-                $or: [{ slug: cid }, { id: cid }]
+                where: {
+                    [Op.or]: [{ slug: cid }, { id: cid }]
+                }
             });
             if (activeCampaign) {
                 console.log(`🔍 Campaign detected by cid ${cid}: ${activeCampaign.name}`);
@@ -31,7 +36,7 @@ router.get('/', async (req, res) => {
 
         // If still not found, fall back to first active campaign
         if (!activeCampaign) {
-            activeCampaign = await Campaign.findOne({ isActive: true });
+            activeCampaign = await Campaign.findOne({ where: { isActive: true } });
         }
 
         if (!activeCampaign) {
@@ -60,7 +65,7 @@ router.get('/', async (req, res) => {
         // Extract values using the campaign's parameter mapping
         const extractedData = {};
 
-        for (const [internalKey, networkParam] of Object.entries(postbackMapping.toObject())) {
+        for (const [internalKey, networkParam] of Object.entries(postbackMapping || {})) {
             extractedData[internalKey] = req.query[networkParam];
         }
 
@@ -102,11 +107,11 @@ router.get('/', async (req, res) => {
         let user = null;
 
         // Try to find user by mobile number first
-        user = await User.findOne({ mobileNumber: userId });
+        user = await User.findOne({ where: { mobileNumber: userId } });
 
         // If not found, try finding by UPI ID
         if (!user) {
-            user = await User.findOne({ upiId: userId });
+            user = await User.findOne({ where: { upiId: userId } });
             if (user) {
                 console.log(`🔍 Found user by UPI ID: ${userId}`);
             }
@@ -153,8 +158,8 @@ router.get('/', async (req, res) => {
         // ============================================
         // 💾 CREATE EARNING RECORD
         // ============================================
-        const earning = new Earning({
-            userId: user._id,
+        const earning = await Earning.create({
+            userId: user.id,
             mobileNumber: user.mobileNumber || userId,
             eventType: standardizedEventName,
             payment: payment,
@@ -168,11 +173,9 @@ router.get('/', async (req, res) => {
             walletDisplayName: activeCampaign.wallet_display || activeCampaign.branding?.campaignDisplayName || name
         });
 
-        await earning.save();
-
         // Update user's earnings
-        user.totalEarnings += payment;
-        user.availableBalance += payment;
+        user.totalEarnings = Number(user.totalEarnings) + Number(payment);
+        user.availableBalance = Number(user.availableBalance) + Number(payment);
         await user.save();
 
         // ============================================

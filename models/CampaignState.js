@@ -1,26 +1,35 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('../config/sequelize');
+const { sequelize } = require('../config/sequelize');
+const { ObjectId } = require('bson');
 
-const CampaignStateSchema = new mongoose.Schema({
-    slug: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
-    },
-    isActive: {
-        type: Boolean,
-        default: true
-    },
-    lastModified: {
-        type: Date,
-        default: Date.now
-    }
+const CampaignState = sequelize.define('CampaignState', {
+  id: {
+    type: DataTypes.STRING(24),
+    primaryKey: true,
+    defaultValue: () => new ObjectId().toHexString()
+  },
+  slug: {
+    type: DataTypes.STRING(120),
+    allowNull: false,
+    unique: true
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
+  lastModified: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  }
+}, {
+  tableName: 'campaign_states',
+  timestamps: false
 });
 
-// Update lastModified on save
-CampaignStateSchema.pre('save', function (next) {
-    this.lastModified = Date.now();
-    next();
+CampaignState.beforeSave((state) => {
+  state.lastModified = new Date();
 });
 
-module.exports = mongoose.model('CampaignState', CampaignStateSchema);
+module.exports = CampaignState;

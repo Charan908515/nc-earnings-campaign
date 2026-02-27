@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
-const mongoose = require('mongoose');
 const campaignConfig = require('./campaign-config');
+const { Op } = require('../config/sequelize');
 
 // ============================================
 // 🤖 TELEGRAM BOT CONFIGURATION
@@ -16,6 +16,7 @@ const USER_BOT_TOKEN = process.env.TELEGRAM_USER_BOT_TOKEN;
 
 const TelegramUser = require('../models/TelegramUser');
 const TelegramVerification = require('../models/TelegramVerification');
+const User = require('../models/User');
 
 // ============================================
 // 🤖 BOT INITIALIZATION
@@ -50,6 +51,10 @@ function initializeBots() {
 
                 console.log('✅ User Bot initialized (interactive mode)');
                 setupUserBotCommands();
+                // Cleanup expired verification tokens on startup
+                TelegramVerification.destroy({
+                    where: { expiresAt: { [Op.lt]: new Date() } }
+                }).catch(() => { });
             } catch (error) {
                 console.error('❌ User Bot failed to start:', error.message);
             }
@@ -121,7 +126,12 @@ Or manually register:
         if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input)) {
             console.log(`🔑 verifying token: ${input}`);
             try {
-                const verification = await TelegramVerification.findOne({ token: input });
+                const verification = await TelegramVerification.findOne({
+                    where: {
+                        token: input,
+                        expiresAt: { [Op.gt]: new Date() }
+                    }
+                });
 
                 if (!verification) {
                     console.warn(`❌ Verification failed: Token ${input} not found or expired.`);
@@ -134,12 +144,14 @@ Or manually register:
                 console.log(`✅ Token verified. Registering UPI: ${upiId} for Chat: ${chatId}`);
 
                 // Handle Account Switching: Remove this UPI from any OTHER chat IDs
-                await TelegramUser.deleteMany({
-                    phone_number: upiId,
-                    chat_id: { $ne: chatId.toString() }
+                await TelegramUser.destroy({
+                    where: {
+                        phone_number: upiId,
+                        chat_id: { [Op.ne]: chatId.toString() }
+                    }
                 });
 
-                let user = await TelegramUser.findOne({ chat_id: chatId.toString() });
+                let user = await TelegramUser.findOne({ where: { chat_id: chatId.toString() } });
 
                 if (user) {
                     user.phone_number = upiId;
@@ -156,7 +168,7 @@ Or manually register:
                 }
 
                 // Delete used token
-                await TelegramVerification.deleteOne({ _id: verification._id });
+                await TelegramVerification.destroy({ where: { id: verification.id } });
 
                 await userBot.sendMessage(
                     chatId,
@@ -183,12 +195,14 @@ Your UPI ID: <code>${upiId}</code>
             console.log(`📝 Manual registration attempt with UPI: ${input}`);
             try {
                 // Handle Account Switching: Remove this UPI from any OTHER chat IDs
-                await TelegramUser.deleteMany({
-                    phone_number: input,
-                    chat_id: { $ne: chatId.toString() }
+                await TelegramUser.destroy({
+                    where: {
+                        phone_number: input,
+                        chat_id: { [Op.ne]: chatId.toString() }
+                    }
                 });
 
-                let user = await TelegramUser.findOne({ chat_id: chatId.toString() });
+                let user = await TelegramUser.findOne({ where: { chat_id: chatId.toString() } });
 
                 if (user) {
                     if (user.phone_number !== input) {
@@ -257,7 +271,7 @@ Your UPI ID: <code>${input}</code>
         const chatId = msg.chat.id;
 
         try {
-            const user = await TelegramUser.findOne({ chat_id: chatId.toString() });
+            const user = await TelegramUser.findOne({ where: { chat_id: chatId.toString() } });
 
             if (!user) {
                 await userBot.sendMessage(chatId, '⚠️ You are not registered yet.');
@@ -332,7 +346,7 @@ async function sendUserNotification(postbackData) {
         const { telegram, payments } = campaignConfig;
 
         // Find user by UPI ID (stored in phone_number field)
-        const user = await TelegramUser.findOne({ phone_number: phone_number });
+        const user = await TelegramUser.findOne({ where: { phone_number: phone_number } });
 
         if (!user) {
             console.log(`ℹ️  No Telegram user registered for identifier: ${phone_number}`);
@@ -349,10 +363,7 @@ async function sendUserNotification(postbackData) {
         const displayAmount = amount;
 
         // Calculate cumulative unpaid earnings by UPI ID
-        const Earning = mongoose.model('Earning');
-        const User = mongoose.model('User');
-
-        const userAccount = await User.findOne({ upiId: phone_number });
+        const userAccount = await User.findOne({ where: { upiId: phone_number } });
 
         let cumulativeEarnings = 0;
         if (userAccount) {
@@ -457,8 +468,7 @@ async function sendWithdrawalApprovalNotification(withdrawalData) {
         const { userId, upiId, amount, processedAt, closingBalance } = withdrawalData;
 
         // Get the User model to find account owner's UPI ID
-        const User = mongoose.model('User');
-        const accountOwner = await User.findById(userId);
+        const accountOwner = await User.findByPk(userId);
 
         if (!accountOwner) {
             console.log(`ℹ️  User account not found for userId: ${userId}`);
@@ -466,7 +476,7 @@ async function sendWithdrawalApprovalNotification(withdrawalData) {
         }
 
         // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
-        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
+        const telegramUser = await TelegramUser.findOne({ where: { phone_number: accountOwner.upiId } });
 
         if (!telegramUser) {
             console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);
@@ -524,8 +534,7 @@ async function sendWithdrawalRejectionNotification(withdrawalData) {
         const { userId, upiId, amount, processedAt, newBalance } = withdrawalData;
 
         // Get the User model to find account owner's UPI ID
-        const User = mongoose.model('User');
-        const accountOwner = await User.findById(userId);
+        const accountOwner = await User.findByPk(userId);
 
         if (!accountOwner) {
             console.log(`ℹ️  User account not found for userId: ${userId}`);
@@ -533,7 +542,7 @@ async function sendWithdrawalRejectionNotification(withdrawalData) {
         }
 
         // Find Telegram user by the ACCOUNT OWNER's UPI ID (not withdrawal destination UPI)
-        const telegramUser = await TelegramUser.findOne({ phone_number: accountOwner.upiId });
+        const telegramUser = await TelegramUser.findOne({ where: { phone_number: accountOwner.upiId } });
 
         if (!telegramUser) {
             console.log(`ℹ️  No Telegram user registered for account UPI: ${accountOwner.upiId}`);

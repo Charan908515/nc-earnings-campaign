@@ -342,7 +342,7 @@ function displayWithdrawals(withdrawals) {
         pendingWithdrawalsTable.innerHTML = pending.map(w => `
       <tr class="border-b border-gray-100 dark:border-gray-700">
         <td class="p-4">
-            <div class="font-bold text-gray-800 dark:text-gray-200">${w.userId?.name || 'user'}</div>
+            <div class="font-bold text-gray-800 dark:text-gray-200">${w.User?.name || 'user'}</div>
             <div class="text-xs text-gray-600 dark:text-gray-400 font-medium">${w.mobileNumber}</div>
             <div class="text-xs text-gray-500">${w.upiId}</div>
             <div class="text-xs text-gray-400 mt-1">${formatDate(w.requestedAt)}</div>
@@ -350,8 +350,8 @@ function displayWithdrawals(withdrawals) {
         <td class="p-4 font-bold text-gray-800 dark:text-gray-200">₹${w.amount}</td>
         <td class="p-4">
           <div class="flex gap-2">
-              <button class="btn btn-success approve-withdrawal-btn px-3 py-1 text-xs" data-withdrawal-id="${w._id}">Approve</button>
-              <button class="btn btn-danger reject-withdrawal-btn px-3 py-1 text-xs" data-withdrawal-id="${w._id}">Reject</button>
+              <button class="btn btn-success approve-withdrawal-btn px-3 py-1 text-xs" data-withdrawal-id="${w.id}">Approve</button>
+              <button class="btn btn-danger reject-withdrawal-btn px-3 py-1 text-xs" data-withdrawal-id="${w.id}">Reject</button>
           </div>
         </td>
       </tr>
@@ -492,11 +492,11 @@ function renderUsers(users) {
             <td class="p-4">
                 <div class="flex flex-wrap gap-2">
                     ${user.isSuspended
-            ? `<button class="btn user-toggle-btn bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}" data-action="unsuspend">Activate</button>`
-            : `<button class="btn user-toggle-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}" data-action="suspend">Suspend</button>`
+            ? `<button class="btn user-toggle-btn bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user.id}" data-action="unsuspend">Activate</button>`
+            : `<button class="btn user-toggle-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user.id}" data-action="suspend">Suspend</button>`
         }
-                    <button class="btn edit-balance-btn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}" data-balance="${user.availableBalance}">Edit Bal</button>
-                    <button class="btn delete-user-btn bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded" data-user-id="${user._id}">Delete</button>
+                    <button class="btn edit-balance-btn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 text-xs rounded" data-user-id="${user.id}" data-balance="${user.availableBalance}">Edit Bal</button>
+                    <button class="btn delete-user-btn bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded" data-user-id="${user.id}">Delete</button>
                 </div>
             </td>
         </tr>

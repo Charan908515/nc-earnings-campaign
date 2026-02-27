@@ -2,13 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const mongoSanitize = require('express-mongo-sanitize');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
 
 // Validate required environment variables
 const requiredEnvVars = [
-    'MONGO_URI',
+    'MYSQL_HOST',
+    'MYSQL_DATABASE',
+    'MYSQL_USER',
+    'MYSQL_PASSWORD',
     'JWT_SECRET',
     'ADMIN_USERNAME',
     'ADMIN_PASSWORD',
@@ -135,9 +137,6 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // 3.5 Cookie parser for authentication
 app.use(cookieParser());
 
-// 4. Sanitize data against NoSQL injection
-app.use(mongoSanitize());
-
 // 5. HTTPS enforcement in production
 if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
@@ -211,7 +210,7 @@ const Campaign = require('./models/Campaign');
 app.get('/c/:slug', async (req, res) => {
     try {
         const slug = req.params.slug;
-        const campaign = await Campaign.findOne({ slug });
+        const campaign = await Campaign.findOne({ where: { slug } });
 
         if (!campaign) {
             return res.status(404).send('Campaign Not Found');

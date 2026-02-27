@@ -6,11 +6,12 @@ const Earning = require('../models/Earning');
 const Withdrawal = require('../models/Withdrawal');
 const TelegramVerification = require('../models/TelegramVerification');
 const { v4: uuidv4 } = require('uuid');
+const { sequelize, Op } = require('../config/sequelize');
 
 // Generate Telegram Link
 router.post('/link-telegram', authMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId);
+        const user = await User.findByPk(req.user.userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -19,9 +20,11 @@ router.post('/link-telegram', authMiddleware, async (req, res) => {
         const token = uuidv4();
 
         // Store token in DB
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
         await TelegramVerification.create({
             token,
-            upiId
+            upiId,
+            expiresAt
         });
 
         const botUsername = 'ncearnings123bot'; // Replace with your actual bot username if different
@@ -43,7 +46,7 @@ router.post('/link-telegram', authMiddleware, async (req, res) => {
 // Get user balance
 router.get('/balance', authMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId);
+        const user = await User.findByPk(req.user.userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -54,8 +57,8 @@ router.get('/balance', authMiddleware, async (req, res) => {
         res.json({
             success: true,
             data: {
-                totalEarnings: user.totalEarnings,
-                availableBalance: user.availableBalance,
+                totalEarnings: Number(user.totalEarnings),
+                availableBalance: Number(user.availableBalance),
                 mobileNumber: user.mobileNumber,
                 upiId: user.upiId,
                 name: user.name
@@ -74,20 +77,23 @@ router.get('/history', authMiddleware, async (req, res) => {
     try {
         const Campaign = require('../models/Campaign');
 
-        const earnings = await Earning.find({ userId: req.user.userId })
-            .sort({ createdAt: -1 })
-            .limit(100)
-            .select('createdAt eventType payment campaignName campaignSlug walletDisplayName');
+        const earnings = await Earning.findAll({
+            where: { userId: req.user.userId },
+            order: [['createdAt', 'DESC']],
+            limit: 100,
+            attributes: ['id', 'createdAt', 'eventType', 'payment', 'campaignName', 'campaignSlug', 'walletDisplayName']
+        });
 
         const dataWithDisplay = [];
         for (const item of earnings) {
-            const doc = item.toObject();
+            const doc = item.toJSON();
             if (!doc.walletDisplayName && doc.campaignSlug) {
-                const campaign = await Campaign.findOne({ slug: doc.campaignSlug });
+                const campaign = await Campaign.findOne({ where: { slug: doc.campaignSlug } });
                 doc.walletDisplayName = campaign?.wallet_display || campaign?.branding?.campaignDisplayName || doc.campaignName;
             } else if (!doc.walletDisplayName) {
                 doc.walletDisplayName = doc.campaignName;
             }
+            doc.payment = Number(doc.payment);
             dataWithDisplay.push(doc);
         }
 
@@ -121,8 +127,10 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
 
         // SECURITY CHECK 2: Check for pending withdrawals
         const pendingWithdrawal = await Withdrawal.findOne({
-            userId: req.user.userId,
-            status: 'pending'
+            where: {
+                userId: req.user.userId,
+                status: 'pending'
+            }
         });
 
         if (pendingWithdrawal) {
@@ -133,7 +141,7 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
         }
 
         // SECURITY CHECK 3: Get user with fresh data
-        const user = await User.findById(req.user.userId);
+        const user = await User.findByPk(req.user.userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -143,7 +151,7 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
         }
 
         // SECURITY CHECK 4: Validate balance
-        if (user.availableBalance < 30) {
+        if (Number(user.availableBalance) < 30) {
             return res.status(400).json({
                 success: false,
                 message: 'Minimum withdrawal amount is ₹30'
@@ -161,44 +169,44 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Minimum withdrawal amount is ₹30' });
         }
 
-        if (amountToWithdraw > user.availableBalance) {
+        if (amountToWithdraw > Number(user.availableBalance)) {
             return res.status(400).json({ success: false, message: 'Insufficient balance' });
         }
 
         // Deduct the requested amount
-        const previousBalance = user.availableBalance;
-        const newBalance = previousBalance - amountToWithdraw;
+        let withdrawal;
+        let previousBalance;
+        let newBalance;
 
-        // SECURITY CHECK 7: Use atomic operation to prevent race conditions
-        const updateResult = await User.findOneAndUpdate(
-            {
-                _id: user._id,
-                availableBalance: previousBalance // Ensure balance hasn't changed
-            },
-            {
-                $inc: { availableBalance: -amountToWithdraw }
-            },
-            { new: true }
-        );
-
-        if (!updateResult) {
-            console.log(`⚠️ Balance changed during withdrawal for user ${user.mobileNumber}`);
-            return res.status(409).json({
-                success: false,
-                message: 'Balance changed during withdrawal. Please try again.'
+        await sequelize.transaction(async (t) => {
+            const lockedUser = await User.findByPk(req.user.userId, {
+                transaction: t,
+                lock: t.LOCK.UPDATE
             });
-        }
 
-        // Create withdrawal request
-        const withdrawal = new Withdrawal({
-            userId: user._id,
-            mobileNumber: user.mobileNumber,
-            amount: amountToWithdraw,
-            upiId: upiId.trim(),
-            status: 'pending'
+            if (!lockedUser) {
+                throw new Error('User not found');
+            }
+
+            if (Number(lockedUser.availableBalance) < amountToWithdraw) {
+                const err = new Error('Insufficient balance');
+                err.status = 400;
+                throw err;
+            }
+
+            previousBalance = Number(lockedUser.availableBalance);
+            newBalance = previousBalance - amountToWithdraw;
+            lockedUser.availableBalance = newBalance;
+            await lockedUser.save({ transaction: t });
+
+            withdrawal = await Withdrawal.create({
+                userId: lockedUser.id,
+                mobileNumber: lockedUser.mobileNumber,
+                amount: amountToWithdraw,
+                upiId: upiId.trim(),
+                status: 'pending'
+            }, { transaction: t });
         });
-
-        await withdrawal.save();
 
         console.log(`💰 Withdrawal request created: ₹${amountToWithdraw} for ${user.mobileNumber} to ${upiId.trim()}`);
 
@@ -206,8 +214,8 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
             success: true,
             message: 'Withdrawal request submitted successfully.',
             data: {
-                withdrawalId: withdrawal._id,
-                amount: withdrawal.amount,
+                withdrawalId: withdrawal.id,
+                amount: Number(withdrawal.amount),
                 status: withdrawal.status,
                 upiId: withdrawal.upiId,
                 previousBalance: previousBalance,
@@ -215,6 +223,9 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
             }
         });
     } catch (error) {
+        if (error.status) {
+            return res.status(error.status).json({ success: false, message: error.message });
+        }
         if (process.env.NODE_ENV !== 'production') {
             console.error('Withdrawal error:', error);
         }
@@ -225,12 +236,17 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
 // Get user's withdrawal history
 router.get('/withdrawals', authMiddleware, async (req, res) => {
     try {
-        const withdrawals = await Withdrawal.find({ userId: req.user.userId })
-            .sort({ requestedAt: -1 });
+        const withdrawals = await Withdrawal.findAll({
+            where: { userId: req.user.userId },
+            order: [['requestedAt', 'DESC']]
+        });
 
         res.json({
             success: true,
-            data: withdrawals
+            data: withdrawals.map(w => ({
+                ...w.toJSON(),
+                amount: Number(w.amount)
+            }))
         });
     } catch (error) {
         if (process.env.NODE_ENV !== 'production') {
@@ -249,11 +265,12 @@ router.post('/update-profile', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Name cannot be empty' });
         }
 
-        const user = await User.findByIdAndUpdate(
-            req.user.userId,
-            { name: name.trim() },
-            { new: true }
-        );
+        const user = await User.findByPk(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        user.name = name.trim();
+        await user.save();
 
         res.json({
             success: true,
@@ -281,7 +298,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
         }
 
-        const user = await User.findById(req.user.userId);
+        const user = await User.findByPk(req.user.userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }

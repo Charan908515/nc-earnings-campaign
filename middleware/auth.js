@@ -10,6 +10,13 @@ const authMiddleware = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Ensure this is a USER token (must contain userId)
+        if (!decoded.userId) {
+            res.clearCookie('token');
+            return res.status(401).json({ success: false, message: 'Token is not valid for user access' });
+        }
+
         req.user = decoded;
         next();
     } catch (error) {
